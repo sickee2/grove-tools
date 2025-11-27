@@ -1,0 +1,13 @@
+# Xmake cache
+.xmake/
+.vscode
+build/
+build_out/
+clangd/
+
+src/main.cpp
+.DS_Store
+.root
+grstr
+
+
