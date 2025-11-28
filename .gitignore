@@ -5,7 +5,7 @@ build/
 build_out/
 clangd/
 
-./src/main.cpp
+src/main.cpp
 .DS_Store
 .root
 ./grstr
