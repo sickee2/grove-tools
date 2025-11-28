@@ -8,6 +8,6 @@ clangd/
 src/main.cpp
 .DS_Store
 .root
-grstr
+./grstr
 
 
