@@ -38,24 +38,24 @@ void test() {
   term::writeln("十进制:");
   for (auto i : int_test_values) {
     auto result = gr::toy::itoss(buffer, 64, i, 10);
-    if (result.s) {
-      term::writeln("  {} -> {}", i, str::u8v(result.s, result.size));
+    if (result.ptr) {
+      term::writeln("  {} -> {}", i, str::u8v(result.ptr, result.size));
     }
   }
 
   term::writeln("\n十六进制（带前缀）:");
   for (auto i : int_test_values) {
     auto result = gr::toy::itoss(buffer, 64, i, 16, false, true);
-    if (result.s) {
-      term::writeln("  {} -> {}", i, str::u8v(result.s, result.size));
+    if (result.ptr) {
+      term::writeln("  {} -> {}", i, str::u8v(result.ptr, result.size));
     }
   }
 
   term::writeln("\n十六进制（大写，带前缀）:");
   for (auto i : int_test_values) {
     auto result = gr::toy::itoss(buffer, 64, i, 16, true, true);
-    if (result.s) {
-      term::writeln("  {} -> {}", i, str::u8v(result.s, result.size));
+    if (result.ptr) {
+      term::writeln("  {} -> {}", i, str::u8v(result.ptr, result.size));
     }
   }
 
@@ -63,8 +63,8 @@ void test() {
   for (auto i : int_test_values) {
     if (i >= 0 && i < 256) { // 限制范围避免输出太长
       auto result = gr::toy::itoss(buffer, 64, i, 2, false, true);
-      if (result.s) {
-        term::writeln("  {} -> {}", i, str::u8v(result.s, result.size));
+      if (result.ptr) {
+        term::writeln("  {} -> {}", i, str::u8v(result.ptr, result.size));
       }
     }
   }
@@ -72,8 +72,8 @@ void test() {
   term::writeln("\n八进制（带前缀）:");
   for (auto i : int_test_values) {
     auto result = gr::toy::itoss(buffer, 64, i, 8, false, true);
-    if (result.s) {
-      term::writeln("  {} -> {}", i, str::u8v(result.s, result.size));
+    if (result.ptr) {
+      term::writeln("  {} -> {}", i, str::u8v(result.ptr, result.size));
     }
   }
 
@@ -81,9 +81,9 @@ void test() {
   term::writeln("\n=== 其他进制测试 ===");
   for (auto i : {10, 15, 20, 25, 30, 35}) {
     auto result = gr::toy::itoss(buffer, 64, 123456789, i);
-    if (result.s) {
+    if (result.ptr) {
       term::writeln("  123456789 (base {}) -> {}", i,
-                 str::u8v(result.s, result.size));
+                 str::u8v(result.ptr, result.size));
     }
   }
 
@@ -93,8 +93,8 @@ void test() {
   term::writeln("固定小数点格式:");
   for (auto d : float_test_values) {
     auto result = gr::toy::ftoss(buffer, 64, d, toy::chars_format::fixed, 6);
-    if (result.s) {
-      term::writeln("  {:20} -> {}", d, str::u8v(result.s, result.size));
+    if (result.ptr) {
+      term::writeln("  {:20} -> {}", d, str::u8v(result.ptr, result.size));
     } else {
       term::writeln("  {:20} -> FAILED", d);
     }
@@ -104,8 +104,8 @@ void test() {
   for (auto d : float_test_values) {
     auto result =
         gr::toy::ftoss(buffer, 64, d, toy::chars_format::scientific, 6);
-    if (result.s) {
-      term::writeln("  {:20} -> {}", d, str::u8v(result.s, result.size));
+    if (result.ptr) {
+      term::writeln("  {:20} -> {}", d, str::u8v(result.ptr, result.size));
     } else {
       term::writeln("  {:20} -> FAILED", d);
     }
@@ -115,8 +115,8 @@ void test() {
   for (auto d : float_test_values) {
     auto result =
         gr::toy::ftoss(buffer, 64, d, toy::chars_format::general, 6);
-    if (result.s) {
-      term::writeln("  {:20} -> {}", d, str::u8v(result.s, result.size));
+    if (result.ptr) {
+      term::writeln("  {:20} -> {}", d, str::u8v(result.ptr, result.size));
     } else {
       term::writeln("  {:20} -> FAILED", d);
     }
@@ -128,9 +128,9 @@ void test() {
   for (auto precision : {0, 2, 4, 6, 10, 15}) {
     auto result = gr::toy::ftoss(buffer, 64, test_value,
                                     toy::chars_format::fixed, precision);
-    if (result.s) {
+    if (result.ptr) {
       term::writeln("  π (precision {}) -> {}", precision,
-                 str::u8v(result.s, result.size));
+                 str::u8v(result.ptr, result.size));
     }
   }
 
@@ -144,8 +144,8 @@ void test() {
   for (auto d : boundary_values) {
     auto result =
         gr::toy::ftoss(buffer, 64, d, toy::chars_format::scientific, 6);
-    if (result.s) {
-      term::writeln("  {:20} -> {}", d, str::u8v(result.s, result.size));
+    if (result.ptr) {
+      term::writeln("  {:20} -> {}", d, str::u8v(result.ptr, result.size));
     }
   }
 
@@ -205,15 +205,15 @@ void test() {
     auto fixed_result =
         gr::toy::ftoss(buffer, 64, test.value, toy::chars_format::fixed, 6);
     std::string fixed_actual =
-        fixed_result.s
-            ? std::string(fixed_result.s, fixed_result.size)
+        fixed_result.ptr
+            ? std::string(fixed_result.ptr, fixed_result.size)
             : "FAILED";
 
     // 测试科学计数法
     auto sci_result = gr::toy::ftoss(buffer, 64, test.value,
                                         toy::chars_format::scientific, 6);
     std::string sci_actual =
-        sci_result.s ? std::string(sci_result.s, sci_result.size)
+        sci_result.ptr ? std::string(sci_result.ptr, sci_result.size)
                          : "FAILED";
 
     term::writeln("  {:.6f} -> fixed: '{}' {}, scientific: '{}' {}", test.value,
@@ -237,17 +237,17 @@ void test() {
         gr::toy::ftoss(buffer, 64, d, toy::chars_format::general, 6);
 
     term::writeln("  Special value:");
-    if (fixed_result.s) {
+    if (fixed_result.ptr) {
       term::writeln("    fixed: '{}'",
-                 str::u8v(fixed_result.s, fixed_result.size));
+                 str::u8v(fixed_result.ptr, fixed_result.size));
     }
-    if (sci_result.s) {
+    if (sci_result.ptr) {
       term::writeln("    scientific: '{}'",
-                 str::u8v(sci_result.s, sci_result.size));
+                 str::u8v(sci_result.ptr, sci_result.size));
     }
-    if (gen_result.s) {
+    if (gen_result.ptr) {
       term::writeln("    general: '{}'",
-                 str::u8v(gen_result.s, gen_result.size));
+                 str::u8v(gen_result.ptr, gen_result.size));
     }
   }
 }

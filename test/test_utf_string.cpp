@@ -6,7 +6,7 @@ using namespace gr::str;
 using namespace gr::literals;
 
 void test_constructors() {
-  gr::console::outln("=== Testing Constructors ===");
+  gr::console::writeln("=== Testing Constructors ===");
 
   // 默认构造
   u8 str1;
@@ -38,11 +38,11 @@ void test_constructors() {
   u8 str7(100);
   assert(str7.capacity() >= 100);
 
-  gr::console::outln("✓ All constructor tests passed");
+  gr::console::writeln("✓ All constructor tests passed");
 }
 
 void test_assignment_operators() {
-  gr::console::outln("=== Testing Assignment Operators ===");
+  gr::console::writeln("=== Testing Assignment Operators ===");
 
   // 修复赋值操作符歧义问题
   u8 str1;
@@ -73,18 +73,18 @@ void test_assignment_operators() {
   assert(str7 == "Move");
   assert(str6.empty());
 
-  gr::console::outln("✓ All assignment operator tests passed");
+  gr::console::writeln("✓ All assignment operator tests passed");
 }
 
 void test_unicode_iteration() {
-  gr::console::outln("=== Testing Unicode Iteration ===");
+  gr::console::writeln("=== Testing Unicode Iteration ===");
 
   u8 str("Hello 世界 🌍");
 
   // Unicode字符计数
   size_t code_point_count = str.usize();
   assert(code_point_count > 0);
-  gr::console::outln("Code points: {}", code_point_count);
+  gr::console::writeln("Code points: {}", code_point_count);
 
   // Unicode迭代
   size_t count = 0;
@@ -94,11 +94,11 @@ void test_unicode_iteration() {
   }
   assert(count == code_point_count);
 
-  gr::console::outln("✓ All unicode iteration tests passed");
+  gr::console::writeln("✓ All unicode iteration tests passed");
 }
 
 void test_case_conversion() {
-  gr::console::outln("=== Testing Case Conversion ===");
+  gr::console::writeln("=== Testing Case Conversion ===");
 
   u8 str1("Hello World");
   str1.to_upper();
@@ -108,11 +108,11 @@ void test_case_conversion() {
   str2.to_lower();
   assert(str2 == "hello world");
 
-  gr::console::outln("✓ All case conversion tests passed");
+  gr::console::writeln("✓ All case conversion tests passed");
 }
 
 void test_trimming() {
-  gr::console::outln("=== Testing Trimming ===");
+  gr::console::writeln("=== Testing Trimming ===");
 
   u8 str1("   Hello World   ");
   str1.trim();
@@ -126,11 +126,11 @@ void test_trimming() {
   str3.trim_right();
   assert(str3 == "   Hello World");
 
-  gr::console::outln("✓ All trimming tests passed");
+  gr::console::writeln("✓ All trimming tests passed");
 }
 
 void test_substring_operations() {
-  gr::console::outln("=== Testing Substring Operations ===");
+  gr::console::writeln("=== Testing Substring Operations ===");
 
   u8 str("Hello World");
 
@@ -146,11 +146,11 @@ void test_substring_operations() {
   assert(str.ends_with(u8v("World")));
   assert(!str.ends_with(u8v("Hello")));
 
-  gr::console::outln("✓ All substring operation tests passed");
+  gr::console::writeln("✓ All substring operation tests passed");
 }
 
 void test_splitting() {
-  gr::console::outln("=== Testing Splitting ===");
+  gr::console::writeln("=== Testing Splitting ===");
 
   u8 str("apple,banana,cherry");
   auto parts = str.split(u8v(","));
@@ -160,11 +160,11 @@ void test_splitting() {
   assert(parts[1] == "banana");
   assert(parts[2] == "cherry");
 
-  gr::console::outln("✓ All splitting tests passed");
+  gr::console::writeln("✓ All splitting tests passed");
 }
 
 void test_bom_operations() {
-  gr::console::outln("=== Testing BOM Operations ===");
+  gr::console::writeln("=== Testing BOM Operations ===");
 
   // 创建带BOM的字符串
   u8 str_with_bom = bom_utils::make_u8_with_bom("Hello World");
@@ -179,11 +179,11 @@ void test_bom_operations() {
   str_with_bom.add_bom();
   assert(str_with_bom.has_bom());
 
-  gr::console::outln("✓ All BOM operation tests passed");
+  gr::console::writeln("✓ All BOM operation tests passed");
 }
 
 void test_alignment() {
-  gr::console::outln("=== Testing Alignment ===");
+  gr::console::writeln("=== Testing Alignment ===");
 
   u8 str("Hello");
 
@@ -201,11 +201,11 @@ void test_alignment() {
   assert(right.size() == 10);
   assert(right.ends_with(u8v("Hello")));
 
-  gr::console::outln("✓ All alignment tests passed");
+  gr::console::writeln("✓ All alignment tests passed");
 }
 
 void test_conversion_functions() {
-  gr::console::outln("=== Testing Conversion Functions ===");
+  gr::console::writeln("=== Testing Conversion Functions ===");
 
   u8 utf8_str("Hello 世界");
 
@@ -217,11 +217,11 @@ void test_conversion_functions() {
   auto std_str = utf8_str.as_std_string();
   assert(std_str == "Hello 世界");
 
-  gr::console::outln("✓ All conversion function tests passed");
+  gr::console::writeln("✓ All conversion function tests passed");
 }
 
 void test_user_defined_literals() {
-  gr::console::outln("=== Testing User-Defined Literals ===");
+  gr::console::writeln("=== Testing User-Defined Literals ===");
 
   // 使用用户定义字面量
   auto str1 = "Hello"_u8;
@@ -233,11 +233,11 @@ void test_user_defined_literals() {
   auto view1 = "Hello"_u8v;
   assert(view1 == "Hello");
 
-  gr::console::outln("✓ All user-defined literal tests passed");
+  gr::console::writeln("✓ All user-defined literal tests passed");
 }
 
 void test_replace_operations() {
-  gr::console::outln("=== Testing Replace Operations ===");
+  gr::console::writeln("=== Testing Replace Operations ===");
 
   u8 str("Hello World");
 
@@ -250,11 +250,11 @@ void test_replace_operations() {
   assert(new_str == "Hi Universe");
   assert(str == "Hello Universe"); // 原字符串不变
 
-  gr::console::outln("✓ All replace operation tests passed");
+  gr::console::writeln("✓ All replace operation tests passed");
 }
 
 void test_validation() {
-  gr::console::outln("=== Testing Validation ===");
+  gr::console::writeln("=== Testing Validation ===");
 
   u8 str1("   ");
   assert(str1.is_blank());
@@ -269,7 +269,7 @@ void test_validation() {
   u8 non_empty("Text");
   assert(static_cast<bool>(non_empty));
 
-  gr::console::outln("✓ All validation tests passed");
+  gr::console::writeln("✓ All validation tests passed");
 }
 
 int main() {
@@ -288,10 +288,10 @@ int main() {
     test_replace_operations();
     test_validation();
 
-    gr::console::outln("\n🎉 All tests passed successfully!");
+    gr::console::writeln("\n🎉 All tests passed successfully!");
     return 0;
   } catch (const std::exception &e) {
-    gr::console::errln("❌ Test failed: {}", e.what());
+    gr::console::errorln("❌ Test failed: {}", e.what());
     return 1;
   }
 }

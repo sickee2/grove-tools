@@ -1,4 +1,5 @@
 #include <gr/string.hh>
+#include <gr/console.hh>
 
 void bom_example() {
   using namespace gr::str;
@@ -6,14 +7,13 @@ void bom_example() {
   // Detect BOM
   u8 utf8_with_bom = bom_utils::make_u8_with_bom("Hello World");
   if (utf8_with_bom.has_bom()) {
-    std::cout << "UTF-8 string has BOM" << std::endl;
+    gr::console::writeln("UTF-8 string has BOM");
   }
 
   // Auto-handle BOM and endianness iterator
   auto iter = utf8_with_bom.ubegin_auto();
   while (iter) {
-    std::cout << "Code point: U+" << std::hex << (*iter).code() <<" "<< std::dec << iter.seq_view()
-              << std::endl;
+    gr::console::writeln("Code point: U+{:x} <=> {}", (*iter).code(),  iter.seq_view());
     ++iter;
   }
 
@@ -23,7 +23,7 @@ void bom_example() {
   // Add BOM
   u16 utf16_str = u"Hello"_u16;
   utf16_str.add_bom(gr::endian::big);
-  std::cout << utf16_str.to_u8() << std::endl;
+  gr::console::writeln(utf16_str.to_u8());
 }
 
 int main(){

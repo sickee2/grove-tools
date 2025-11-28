@@ -86,24 +86,6 @@ int main() {
   // 测试优化版本
   volatile uint64_t dummy_result = 0;
 
-  // 测试优化版本
-  Timer t1("toy::stoi_simple (mixed bases)");
-  for (int i = 0; i < iterations; ++i) {
-    for (const auto& test : test_cases) {
-      if (test.str[0] == '-') {
-        int64_t value = 0;
-        auto res = gr::toy::sstoi_simple(test.str, test.str + strlen(test.str), value, test.base);
-        dummy_result += static_cast<uint64_t>(value); // 统一防优化
-        (void)res;
-      } else {
-        uint64_t value = 0;
-        auto res = gr::toy::sstoi_simple(test.str, test.str + strlen(test.str), value, test.base);
-        dummy_result += value; // 统一防优化
-        (void)res;
-      }
-    }
-  }
-  t1.stop();
 
   // 测试简单版本
   Timer t2("toy::stoi (mixed bases)");
@@ -142,7 +124,6 @@ int main() {
   }
   t3.stop();
 
-  t1.report();
   t2.report();
   t3.report();
 
@@ -187,17 +168,6 @@ int main() {
     {"-1", 10, -1},
   };
 
-  for (const auto &test : base_cases) {
-    int64_t value;
-    auto res = gr::toy::sstoi_simple(test.str, test.str + strlen(test.str), value, test.base);
-    if (res.ec == std::errc{} && value == test.expected) {
-      console::writeln("✓ base {}: {} -> {}", test.base, test.str, value);
-    } else {
-      console::errorln("✗ base {}: {} -> {} (expected {})", test.base, test.str,
-                    value, test.expected);
-    }
-  }
-
   // 测试溢出情况
   console::writeln("\n=== overflow test ===");
   // 无符号溢出测试
@@ -208,7 +178,7 @@ int main() {
 
   for (const auto& str : unsigned_overflow_cases) {
     uint64_t value;
-    auto res = gr::toy::sstoi_simple(str, str + strlen(str), value, 10);
+    auto res = gr::toy::sstoi(str, str + strlen(str), value, 10);
     console::writeln("测试 '{}': ec = {}, value = {}", str, static_cast<int>(res.ec), value);
     if (res.ec == std::errc::result_out_of_range) {
       console::writeln("✓ 正确检测到溢出: {}", str);
@@ -225,7 +195,7 @@ int main() {
 
   for (const auto& str : signed_overflow_cases) {
     int64_t value;  // 使用有符号类型
-    auto res = gr::toy::sstoi_simple(str, str + strlen(str), value, 10);
+    auto res = gr::toy::sstoi(str, str + strlen(str), value, 10);
     console::writeln("测试 '{}': ec = {}, value = {}", str, static_cast<int>(res.ec), value);
     if (res.ec == std::errc::result_out_of_range) {
       console::writeln("✓ 正确检测到溢出: {}", str);
