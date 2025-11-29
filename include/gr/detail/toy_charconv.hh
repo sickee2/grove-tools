@@ -262,7 +262,7 @@ constexpr int char_to_digit(char c) {
 }
 
 template <bool IsOctal, typename UnsignedType>
-inline sstov_result stoi_pow2_base(const char *&first, const char *last,
+inline sstov_result stoi_pow2_base_u(const char *&first, const char *last,
                                    UnsignedType &result, int base) {
   const int shift = IsOctal ? 3 : (base == 2 ? 1 : 4);
   const UnsignedType max_safe =
@@ -289,7 +289,7 @@ inline sstov_result stoi_pow2_base(const char *&first, const char *last,
 }
 
 template <typename UnsignedType>
-inline sstov_result stoi_base10(const char *&first, const char *last,
+inline sstov_result stoi_base10_u(const char *&first, const char *last,
                                 UnsignedType &result) {
   UnsignedType pre_result = 0;
   result = 0;
@@ -311,7 +311,7 @@ inline sstov_result stoi_base10(const char *&first, const char *last,
   return {first, std::errc{}};
 }
 template <typename UnsignedType>
-inline sstov_result stoi_alnum(const char *&first, const char *last,
+inline sstov_result stoi_alnum_u(const char *&first, const char *last,
                                UnsignedType &result, int base) {
 
   UnsignedType pre_result = 0;
@@ -854,6 +854,7 @@ private:
       return;
     }
 
+    // Clamp precision
     if(precision > MAX_FLOAT_PRECISION){
       precision = MAX_FLOAT_PRECISION;
     }
@@ -872,6 +873,23 @@ private:
     return;
   }
 };
+
+/**
+ * @brief test first char and offset pointer
+ */
+
+inline int get_sign_for_sstov(const char* &first){
+  int sign = 1;
+  if (*first == '-') {
+    sign = -1;
+    ++first;
+  } else if (*first == '+') {
+    sign = 1;
+    ++first;
+  }
+  return sign;
+}
+
 } // namespace detail
 
 
@@ -910,33 +928,34 @@ inline sstov_result sstoi(const char *first, const char *last, integer_type &val
   sstov_result status;
 
   if(base == 10){
-    status = detail::stoi_base10(first, last, result);
+    status = detail::stoi_base10_u(first, last, result);
   } else if ((base & (base - 1)) == 0) {
     if (base == 2) {
-      status = detail::stoi_pow2_base<false>(first, last, result, base);
+      status = detail::stoi_pow2_base_u<false>(first, last, result, base);
     } else if (base <= 8) {
-      status = detail::stoi_pow2_base<true>(first, last, result, base);
+      status = detail::stoi_pow2_base_u<true>(first, last, result, base);
     } else {
-      status = detail::stoi_pow2_base<false>(first, last, result, base);
+      status = detail::stoi_pow2_base_u<false>(first, last, result, base);
     }
   } else {
-      status = detail::stoi_alnum(first, last, result, base);
+      status = detail::stoi_alnum_u(first, last, result, base);
   }
 
-  if constexpr (std::is_signed_v<integer_type>) {
+  if constexpr (std::is_signed_v<integer_type>) { // signed type
     if (sign == -1) {
       if (result > unsigned_type(std::numeric_limits<integer_type>::max()) + 1) {
         return {status.ptr, std::errc::result_out_of_range};
       }
       value = -integer_type(result);
-    } else {
-      if (result > unsigned_type(std::numeric_limits<integer_type>::max())) {
-        return {status.ptr, std::errc::result_out_of_range};
-      }
-      value = integer_type(result);
     }
+    // else {
+    //   if (result > unsigned_type(std::numeric_limits<integer_type>::max())) {
+    //     return {status.ptr, std::errc::result_out_of_range};
+    //   }
+    //   value = integer_type(result);
+    // }
   } else {
-    value = integer_type(result);
+    value = integer_type(result); // unsigned_type
   }
 
   return status;
@@ -945,23 +964,13 @@ inline sstov_result sstoi(const char *first, const char *last, integer_type &val
 template <typename integer_type>
 inline sstov_result sstoi(const char *first, size_t len, integer_type &value,
                           int base = 10) noexcept {
-  // if(first == nullptr || len == 0){
-  //   return {nullptr, std::errc::invalid_argument};
-  // }
   return sstoi(first, first + len, value, base);
 }
 
 template <typename float_type>
 inline toy::sstov_result sstof(const char *first, const char *end,
                                float_type &value) {
-  int sign = 1;
-  if (*first == '-') {
-    sign = -1;
-    ++first;
-  } else if (*first == '+') {
-    sign = 1;
-    ++first;
-  }
+  int sign = toy::detail::get_sign_for_sstov(first);
 
   union starts_pack{
     char ch[4];
@@ -1000,9 +1009,9 @@ inline toy::sstov_result sstof(const char *first, const char *end,
 
   __uint128_t int_part_128 = 0;
   uint64_t int_part_64 = 0;
-  auto res = toy::sstoi(first, end, int_part_64);
+  auto res = toy::detail::stoi_base10_u(first, end, int_part_64);
   if (res.ec != std::errc::result_out_of_range) {
-    res = toy::sstoi(first, end, int_part_128);
+    res = toy::detail::stoi_base10_u(first, end, int_part_128);
   }
 
   const char *frac_p = nullptr;
@@ -1013,7 +1022,7 @@ inline toy::sstov_result sstof(const char *first, const char *end,
   value = float_type(int_part_128 ? int_part_128 : int_part_64);
   if (frac_p) {
     uint64_t frac_part = 0;
-    res = toy::sstoi(frac_p, end, frac_part);
+    res = toy::detail::stoi_base10_u(frac_p, end, frac_part);
     unsigned frac_digits_cout = res.ptr - frac_p;
 
     if (res.ptr - frac_p > 17) {
@@ -1029,12 +1038,16 @@ inline toy::sstov_result sstof(const char *first, const char *end,
 
   while (exp_p < end) {
     if (*exp_p == 'e' || *exp_p == 'E') {
+      ++exp_p;
       int exponent = 0;
-      unsigned remaining = end - exp_p - 1;
+      unsigned remaining = end - exp_p;
       if(remaining > 17) remaining = 17;
-      res = toy::sstoi(exp_p + 1, remaining, exponent);
-      if (exponent) {
-        value *= std::pow(10.0, exponent);
+      int sign_e = toy::detail::get_sign_for_sstov(exp_p);
+      res = toy::detail::stoi_base10_u(exp_p, exp_p + remaining, exponent);
+      if(sign_e < 0){
+        value /= toy::detail::to_chars_helper::get_pow10(exponent);
+      }else{
+        value *= toy::detail::to_chars_helper::get_pow10(exponent);
       }
       break;
     }
