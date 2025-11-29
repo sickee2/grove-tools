@@ -4,7 +4,7 @@
  * Copyright (c) 2025 SICKEE2
  */
 
-#include "gr/utf_sequence.hh"
+#include <gr/utf_sequence.hh>
 #include "gr/utils.hh"
 #include <gr/string.hh>
 #ifndef DISABLE_SUPPORT_ICONV

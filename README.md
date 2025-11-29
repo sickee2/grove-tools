@@ -1,166 +1,146 @@
-# GR Library - High-Performance C++ Utility Library (English Version)
+# GR Format Library - High-Performance C++ Formatting and Logging System
 
 ## Project Overview
 
-GR Library is a modern C++ utility library collection focused on providing high-performance, type-safe, and easy-to-use components. The project implements optimized versions of several standard library functionalities, with exceptional performance in string processing, formatting, and logging.
+GR Format Library is a modern C++ formatting and logging library focused on extreme performance. The core component `gr::toy::format` significantly outperforms the standard library in benchmark tests, while providing a complete logging system and thread-safe console output.
 
-## Core Modules
+## Performance Advantages
 
-### 1. High-Performance Logging System (`gr/logger.hh`)
-**Enterprise-grade logging framework with multiple outputs and thread safety**
+Based on 100,000 iteration performance tests:
 
-- **Log Levels**: TRACE, DEBUG, INFO, WARN, ERROR, FATAL
-- **Output Targets**:
-  - Console output (with ANSI color support)
-  - File output
-  - Rotating files (size-based automatic rotation)
-- **Performance Features**:
-  - Compile-time log level filtering (zero runtime overhead)
-  - Fine-grained locking strategy
-  - Smart resource management
+| Operation Type | std::format | toy::format | Performance Improvement |
+|---------------|-------------|-------------|-------------------------|
+| Integer Formatting | 5859μs | 2598μs | **55% Faster** |
+| Floating-point Formatting | 7904μs | 5928μs | **25% Faster** |
+| String Formatting | 3859μs | 2455μs | **36% Faster** |
+| Overall Throughput | 7.67M ops/sec | 12.33M ops/sec | **60% Higher** |
+
+## Core Components
+
+### 1. High-Performance Formatting Library (`gr/format.hh`)
+**String formatting engine that surpasses std::format**
+
+```cpp
+#include <gr/format.hh>
+
+// Basic formatting
+auto str1 = "Hello {}!"_fmt("World");
+auto str2 = gr::toy::format("Value: {:.2f}", 3.14159);
+
+// Advanced formatting
+auto str3 = format("{:<10} {:>8}", "Name", 42);    // Alignment
+auto str4 = format("{:#x}", 255);                  // Hexadecimal
+auto str5 = format("{:.3}", 1.234567);             // Precision control
+
+// Time formatting
+auto now = std::chrono::system_clock::now();
+auto time_str = format("{:f}", now);               // Full timestamp
+```
+
+**Features:**
+- Type-safe Python-style formatting syntax
+- Compile-time format string checking (C++20)
+- Support for custom type formatting
+- Built-in chrono time/duration formatting
 
 ### 2. Thread-Safe Console Output (`gr/console.hh`)
-**High-performance, thread-safe console I/O operations**
+**High-performance console I/O based on gr::toy::format**
 
-- **Output Types**: Standard output (stdout) and error output (stderr)
-- **Thread Safety**: Global mutex protection prevents output interleaving
-- **Formatting Integration**: Seamless integration with `gr::toy::format`
-- **Automatic Flushing**: Smart buffer management with line-based flushing
-
-### 3. String Formatting (`gr/format.hh`)
-**High-performance string formatting library, 25-60% faster than std::format**
-
-- **Performance Advantages**:
-  - Integer formatting: 55% faster
-  - Floating-point formatting: 25% faster
-  - String formatting: 36% faster
-  - Overall throughput: 60% higher
-
-### 4. Unicode String Processing (`gr/string.hh`)
-**Comprehensive Unicode string processing toolkit**
-
-- **Encoding Support**: UTF-8, UTF-16, UTF-32
-- **Core Capabilities**:
-  - Unicode-aware iteration and manipulation
-  - Automatic BOM detection and handling
-  - Encoding conversion utilities
-  - Text alignment and display width calculation
-
-### 5. Character Conversion (`gr/detail/toy_charconv.hh`)
-**Educational character conversion implementation**
-
-- **Performance Comparison**:
-  - Integer to string: 38% faster
-  - Float to string: 20% faster
-  - String to integer: 6% faster
-  - String to float: 15% slower (pending optimization)
-
-### 6. Tree Iterator (`gr/tree_iter.hh`)
-**Generic tree structure traversal utility**
-
-- **Traversal Strategies**: Depth-first and breadth-first
-- **Interface Features**:
-  - STL-compatible iterator interface
-  - Level tracking
-  - Compile-time interface validation
-
-## Performance Benchmarks
-
-Based on 100,000 iteration tests:
-
-| Operation Type | std::format | toy::format | Performance Gain |
-|---------------|-------------|-------------|------------------|
-| Integer Formatting | 5859μs | 2598μs | 55% |
-| Floating-point Formatting | 7904μs | 5928μs | 25% |
-| String Formatting | 3859μs | 2455μs | 36% |
-| Overall Throughput | 7.67M ops/sec | 12.33M ops/sec | 60% |
-
-## Module Integration Architecture
-
-### Logging System Integration
-```
-Application
-    ↓
-gr::logger (Logging)
-    ↓
-gr::console (Console Output) + gr::toy::format (Formatting)
-    ↓
-gr::str (Unicode Strings) + Standard I/O
-```
-
-### Data Flow Example
 ```cpp
-// Application code
-GR_INFO("User {} logged in successfully, IP: {}", username, ip_address);
+#include <gr/console.hh>
 
-// Processing flow:
-1. Compile-time log level checking
-2. String formatting (gr::toy::format)
-3. Timestamp and context addition
-4. Thread-safe output to console/file
-5. Automatic buffer flushing
+// Basic output
+gr::console::write("Processing...");
+gr::console::writeln("Completed: {} items", count);
+
+// Formatted output
+gr::console::writeln("User: {}, Score: {:.1f}", username, score);
+
+// Error output
+gr::console::error("Failed to open: {}", filename);
+gr::console::errorln("Critical error occurred");
+
+// Progress display
+for (size_t i = 0; i < total; ++i) {
+    gr::console::write("\rProgress: {}/{}", i, total);
+}
 ```
 
-## Usage Examples
+**Features:**
+- Thread-safe output protected by global mutex
+- Automatic newline detection and buffer flushing
+- Zero-copy string view operations
+- Seamless integration with gr::toy::format
 
-### Complete Application Logging
+### 3. Logging System (`gr/logger.hh`)
+**Multi-sink logging framework based on gr::toy::format**
+
 ```cpp
 #include <gr/logger.hh>
-#include <gr/console.hh>
 
-int main() {
-    // Initialize logging system
-    gr::log::init_logger("my_app", true); // Enable color output
-    
-    // Add file outputs
-    auto logger = gr::log::get_default_logger();
-    logger->add_file_sink("app.log");
-    logger->add_rotating_file_sink("rotating.log", 10*1024*1024, 5);
-    
-    // Log at different levels
-    GR_INFO("Application started");
-    GR_DEBUG("Configuration loaded: {} items", config_count);
-    GR_WARN("High memory usage: {:.1f}%", memory_usage);
-    GR_ERROR("Database connection failed: {}", error_message);
-    
-    return 0;
-}
+// Initialize logging system
+gr::log::init_logger("my_app", true);  // Enable color output
+
+// Add output targets
+auto logger = gr::log::get_default_logger();
+logger->add_file_sink("app.log");
+logger->add_rotating_file_sink("rotating.log", 10*1024*1024, 5);
+
+// Level-based logging
+GR_TRACE("Detailed debug: {}", debug_info);
+GR_DEBUG("Configuration: {} items", config_count);
+GR_INFO("User {} logged in", username);
+GR_WARN("High memory: {:.1f}%", memory_usage);
+GR_ERROR("DB connection failed: {}", error_msg);
+GR_FATAL("System shutdown required");
 ```
 
-### High-Performance Console Output
-```cpp
-#include <gr/console.hh>
+**Log Levels:**
+- `TRACE` (0): Detailed debugging information
+- `DEBUG` (1): General debugging information  
+- `INFO` (2): Informational messages
+- `WARN` (3): Warning conditions
+- `ERROR` (4): Error conditions
+- `FATAL` (5): Fatal conditions requiring immediate attention
 
-void process_data(const std::vector<Data>& data) {
-    gr::console::writeln("Processing {} data items", data.size());
-    
-    for (size_t i = 0; i < data.size(); ++i) {
-        if (i % 1000 == 0) {
-            gr::console::write("\rProgress: {}/{}", i, data.size());
-        }
-        // Process data...
-    }
-    
-    gr::console::writeln("\nProcessing completed");
-}
-```
+**Sink Types:**
+- **Console Sink**: ANSI color-coded output
+- **File Sink**: Simple file logging
+- **Rotating File Sink**: Size-based automatic file rotation
 
-### Unicode String Operations
+### 4. Unicode String Utilities (`gr/string.hh`)
+**Enhanced Unicode string processing**
+
 ```cpp
 #include <gr/string.hh>
 
-void unicode_operations() {
-    gr::str::u8 text = "Hello 世界 🌍"_u8;
-    
-    // Unicode-aware trimming and case conversion
-    auto processed = text.utrim().to_upper();
-    
-    // Display width calculation (considering full-width characters)
-    size_t display_width = processed.udisplay_width();
-    
-    // Text alignment
-    auto centered = processed.ucenter(20);
-    gr::console::writeln("Centered: {}", centered);
+gr::str::u8 text = "Hello 世界 🌍"_u8;
+
+// Unicode-aware operations
+auto processed = text.utrim().to_upper();
+size_t display_width = processed.udisplay_width();
+
+// Encoding conversion
+auto utf16_text = text.to_u16();
+auto utf32_text = text.to_u32();
+
+// Text alignment
+auto centered = processed.ucenter(20);
+```
+
+### 5. Unicode Iterator (`gr/utf_iter.hh`)
+**Multi-encoding Unicode code point iteration**
+
+```cpp
+#include <gr/utf_iter.hh>
+
+auto iter = gr::uc::make_iterator(u8"Hello 世界");
+while (iter) {
+    auto cp = *iter;
+    if (cp.is_alphabetic()) {
+        // Process alphabetic characters
+    }
+    ++iter;
 }
 ```
 
@@ -168,9 +148,9 @@ void unicode_operations() {
 
 ### Compile-time Optimization
 - C++20 concepts and C++17 type traits
-- Compile-time format string checking
+- Compile-time format string validation
 - Static tables and constexpr expressions
-- Conditional compilation to eliminate runtime overhead
+- Log level-based conditional compilation
 
 ### Memory Efficiency
 - Stack buffers to avoid dynamic allocation
@@ -184,19 +164,59 @@ void unicode_operations() {
 - Atomic operation guarantees
 - Deadlock prevention
 
-### Unicode Support
-- Full Unicode standard compliance
-- Proper multi-byte sequence handling
-- Accurate display width calculation
-- Automatic BOM handling
+## Quick Start
 
-## Compilation Requirements
+### Basic Usage
+
+```cpp
+#include <gr/logger.hh>
+#include <gr/console.hh>
+
+int main() {
+    // Initialize logging system
+    gr::log::init_logger("demo_app");
+    
+    GR_INFO("Application starting");
+    
+    // High-performance formatting
+    auto result = gr::toy::format("Processing {} items in {:.2f}s", 
+                                 item_count, duration);
+    
+    gr::console::writeln("Result: {}", result);
+    
+    GR_INFO("Application completed");
+    return 0;
+}
+```
+
+### Compilation Requirements
 
 - **C++ Standard**: C++17 or higher (C++20 recommended)
 - **Dependencies**:
   - RE2 (optional, for regex support)
   - iconv (optional, for encoding conversion)
 - **Platform Support**: Linux, Windows (MSYS2)
+
+## Architecture Design
+
+### Core Data Flow
+
+```
+Application Code
+    ↓
+gr::logger (Logging) → gr::toy::format (String Building)
+    ↓  
+gr::console (Console) + File Sinks (Persistence)
+    ↓
+Operating System I/O
+```
+
+### Performance Critical Path Optimization
+
+1. **Compile-time Filtering**: Log levels checked at compile time
+2. **Zero-allocation Formatting**: Uses stack buffers and pre-allocation
+3. **Batched I/O**: Minimizes system call frequency
+4. **Lock Optimization**: Fine-grained locks and short critical sections
 
 ## License
 
@@ -207,10 +227,10 @@ void unicode_operations() {
 ## Project Status
 
 ### Stable Features
-- String formatting and logging system
-- Unicode string processing
-- Console I/O and tree iterator
-- Integer character conversion
+- High-performance string formatting (gr::toy::format)
+- Thread-safe console output (gr::console)  
+- Enterprise-grade logging system (gr::logger)
+- Unicode string processing (gr::string)
 
 ### Features Pending Optimization
 - Floating-point character conversion (currently 15% slower than standard library)
@@ -226,4 +246,3 @@ void unicode_operations() {
 5. **Incremental Optimization**: Continuous improvement and gradual refinement
 
 This project demonstrates the significant potential of modern C++ in performance optimization, providing developers with more efficient alternatives to standard library components, particularly suitable for applications with strict performance requirements.
-
