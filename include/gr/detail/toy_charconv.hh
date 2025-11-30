@@ -116,8 +116,8 @@ template <typename T> struct supports_integer {
 template <typename T>
 inline constexpr bool supports_integer_v = supports_integer<T>::value;
 
-template<typename SIZE_T>
-inline size_t smart_mod_u(SIZE_T n, size_t m) {
+template<typename unsigned_type>
+inline size_t smart_mod_u(unsigned_type n, size_t m) {
   // check n^2
   if ((m & (m - 1)) == 0) {
     return n & (m - 1);
@@ -131,8 +131,8 @@ inline size_t smart_mod_u(SIZE_T n, size_t m) {
   }
 }
 
-template<typename SIZE_T>
-inline size_t smart_div_u(SIZE_T n, size_t d) {
+template<typename unsigned_type>
+inline unsigned_type smart_div_u(unsigned_type n, size_t d) {
   switch (d) {
   case 10: return n / 10; // compiler auto optimized
   case 2: return n >> 1;
