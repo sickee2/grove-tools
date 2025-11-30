@@ -99,25 +99,25 @@ void test_from_chars_tpl(){
 }
 
 void test_from_chars(){
-  // console::writeln("\n=== test_from_chars => __int128_t ===");
-  // test_from_chars_tpl<__int128_t>();
-  // console::writeln("\n=== test_from_chars => __unt128_t ===");
-  // test_from_chars_tpl<__uint128_t>();
-  //
-  // console::writeln("\n=== test_from_chars => int64_t ===");
-  // test_from_chars_tpl<int64_t>();
-  // console::writeln("\n=== test_from_chars => unt64_t ===");
-  // test_from_chars_tpl<uint64_t>();
-  //
-  // console::writeln("\n=== test_from_chars => int32_t ===");
-  // test_from_chars_tpl<int32_t>();
-  // console::writeln("\n=== test_from_chars => unt32_t ===");
-  // test_from_chars_tpl<uint32_t>();
-  //
-  // console::writeln("\n=== test_from_chars => int16_t ===");
-  // test_from_chars_tpl<int16_t>();
-  // console::writeln("\n=== test_from_chars => unt16_t ===");
-  // test_from_chars_tpl<uint16_t>();
+  console::writeln("\n=== test_from_chars => __int128_t ===");
+  test_from_chars_tpl<__int128_t>();
+  console::writeln("\n=== test_from_chars => __unt128_t ===");
+  test_from_chars_tpl<__uint128_t>();
+
+  console::writeln("\n=== test_from_chars => int64_t ===");
+  test_from_chars_tpl<int64_t>();
+  console::writeln("\n=== test_from_chars => unt64_t ===");
+  test_from_chars_tpl<uint64_t>();
+
+  console::writeln("\n=== test_from_chars => int32_t ===");
+  test_from_chars_tpl<int32_t>();
+  console::writeln("\n=== test_from_chars => unt32_t ===");
+  test_from_chars_tpl<uint32_t>();
+
+  console::writeln("\n=== test_from_chars => int16_t ===");
+  test_from_chars_tpl<int16_t>();
+  console::writeln("\n=== test_from_chars => unt16_t ===");
+  test_from_chars_tpl<uint16_t>();
 
   console::writeln("\n=== test_from_chars => int8_t ===");
   test_from_chars_tpl<int8_t>();
