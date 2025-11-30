@@ -560,6 +560,22 @@ pre_parse_integer_type(const format_spec &spec) {
   return std::make_tuple(base, uppercase);
 }
 
+template <typename T>
+constexpr unsigned make_general_integer_buffer_size(){
+  switch (sizeof(T)) {
+  case 1:
+  case 2:
+    return 8;
+  case 4:
+    return 16;
+  case 8:
+    return 32;
+  case 16:
+  default:
+    return 45;
+  }
+}
+
 /**
  * @brief Integer formatting implementation
  * Supports decimal, binary, octal, and hexadecimal formats
@@ -570,7 +586,8 @@ void format_integer_impl(format_output &out, T value,
   // Fast path: use std::to_chars for simple cases
   if (spec.width <= 0 && spec.precision < 0 && !spec.alternate &&
       (spec.type == '\0' || spec.type == 'd') && spec.sign == '-') {
-    char buffer[32];
+    constexpr unsigned buffer_size = make_general_integer_buffer_size<T>();
+    char buffer[buffer_size];
 
     auto [ptr, len] = itoss(buffer, 32, value, 10);
     if(ptr != nullptr){
@@ -587,7 +604,7 @@ void format_integer_impl(format_output &out, T value,
     auto [ptr, size] = itoss(buffer, buffer_size, value, base, uppercase, alternate);
     apply_alignment(out, ptr, size, spec);
   }else{
-    constexpr size_t buffer_size = sizeof(T) > sizeof(int64_t) ? 32 : 24;
+    constexpr unsigned buffer_size = make_general_integer_buffer_size<T>();
     bool alternate = spec.alternate;
     char buffer[buffer_size];
     auto [ptr, size] = itoss(buffer, buffer_size, value, base, uppercase, alternate);
