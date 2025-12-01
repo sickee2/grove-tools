@@ -51,6 +51,7 @@ int main(){
   // test_upper_lower();
   // test_utf_string();
   // test_utf_iter_performance();
-  test_from_chars();
+  // test_from_chars();
+  // console::writeln("{} {}", 1, 2);
   return 0;
 }

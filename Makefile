@@ -22,8 +22,8 @@ $(SRC_DIR)/gr/utf_string.cpp \
 $(TEST_DIR)/test.cpp \
 $(TEST_DIR)/test_sstoi_edgecases.cpp \
 $(TEST_DIR)/test_char_conv_performance.cpp \
+$(TEST_DIR)/test_format_performaence.cpp \
 
-# $(TEST_DIR)/test_format_performaence.cpp \
 # $(TEST_DIR)/test_bom.cpp \
 # $(TEST_DIR)/test_cbuf.cpp \
 # $(TEST_DIR)/test_convert.cpp \

@@ -1402,20 +1402,21 @@ GR_CONSTEXPR_OR_INLINE void parse_argument_index(const char *format_start,
  *       - fmt_string(const char *s, size_t) is runtime format string
  *       - fmt_string(str::u8v s) is runtime format string
  */
-template <size_t ArgCount = 0> class fmt_string {
+template <typename...Args> class fstring {
   const char *str_;
   size_t size_;
 
 public:
+  using type = fstring;
   template <size_t N>
-  consteval fmt_string(const char (&s)[N]) : str_(s), size_(N - 1) {
+  consteval fstring(const char (&s)[N]) : str_(s), size_(N - 1) {
     // pre-check in compile-time
-    constexpr_check_basic_syntax(s, N, ArgCount);
+    constexpr_check_basic_syntax(s, N, sizeof...(Args));
   }
 
-  constexpr fmt_string(const char *s, size_t N) : str_(s), size_(N) {}
+  constexpr fstring(const char *s, size_t N) : str_(s), size_(N) {}
 
-  constexpr fmt_string(str::u8v s) : str_(s.data()), size_(s.size()) {}
+  constexpr fstring(str::u8v s) : str_(s.data()), size_(s.size()) {}
 
   constexpr auto data() const { return str_; }
   constexpr auto size() const { return size_; }
@@ -1551,8 +1552,11 @@ public:
 };
 #endif
 
+template <typename...T>
+using fmt_string = fstring<T...>::type;
+
 template <typename... Args>
-void format_to(format_output& out, fmt_string<sizeof...(Args)> fmt, Args &&...args) {
+void format_to(format_output& out, fmt_string<Args...> fmt, Args &&...args) {
   // Store argument references directly
   auto args_storage = std::forward_as_tuple(std::forward<Args>(args)...);
 
@@ -1668,7 +1672,7 @@ void format_to(format_output& out, fmt_string<sizeof...(Args)> fmt, Args &&...ar
 }
 
 template <typename... Args>
-str::u8 format(fmt_string<sizeof...(Args)> fmt, Args &&...args) {
+str::u8 format(fmt_string<Args...> fmt, Args &&...args) {
   // Precise memory pre-allocation
   size_t estimated_size = fmt.size();
   if constexpr (sizeof...(Args) > 0) {
@@ -1703,7 +1707,7 @@ public:
   template <typename... Args> gr::str::u8 operator()(Args &&...args) {
     // NOTE: fmt_string<size_t>(const char*, size_t) is not eval at
     // compile-time
-    auto fmt = fmt_string(str_, size_);
+    auto fmt = fmt_string<Args...>(str_, size_);
     return gr::toy::format(fmt, std::forward<Args>(args)...);
   };
 };

@@ -628,7 +628,7 @@ public:
    * @param args Format arguments
    */
   template <typename... Args>
-  void log(level i_level, toy::fmt_string<sizeof...(Args)> format, Args &&...args) {
+  void log(level i_level, toy::fmt_string<Args...> format, Args &&...args) {
 
     if (i_level < level_) {
       return;
@@ -652,7 +652,7 @@ public:
   /**
    * @brief Log trace level message
    */
-  template <typename... Args> void trace(toy::fmt_string<sizeof...(Args)> format, Args &&...args) {
+  template <typename... Args> void trace(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 0) {
       log(level::trace, format, std::forward<Args>(args)...);
     }
@@ -661,7 +661,7 @@ public:
   /**
    * @brief Log debug level message
    */
-  template <typename... Args> void debug(toy::fmt_string<sizeof...(Args)> format, Args &&...args) {
+  template <typename... Args> void debug(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 1) {
       log(level::debug, format, std::forward<Args>(args)...);
     }
@@ -670,7 +670,7 @@ public:
   /**
    * @brief Log info level message
    */
-  template <typename... Args> void info(toy::fmt_string<sizeof...(Args)> format, Args &&...args) {
+  template <typename... Args> void info(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 2) {
       log(level::info, format, std::forward<Args>(args)...);
     }
@@ -679,7 +679,7 @@ public:
   /**
    * @brief Log warn level message
    */
-  template <typename... Args> void warn(toy::fmt_string<sizeof...(Args)> format, Args &&...args) {
+  template <typename... Args> void warn(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 3) {
       log(level::warn, format, std::forward<Args>(args)...);
     }
@@ -688,7 +688,7 @@ public:
   /**
    * @brief Log error level message
    */
-  template <typename... Args> void error(toy::fmt_string<sizeof...(Args)> format, Args &&...args) {
+  template <typename... Args> void error(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 4) {
       log(level::error, format, std::forward<Args>(args)...);
     }
@@ -697,7 +697,7 @@ public:
   /**
    * @brief Log fatal level message
    */
-  template <typename... Args> void fatal(toy::fmt_string<sizeof...(Args)> format, Args &&...args) {
+  template <typename... Args> void fatal(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 5) {
       log(level::fatal, format, std::forward<Args>(args)...);
     }
@@ -826,32 +826,32 @@ inline void init_logger(str::u8v name = "default",
 
 // Convenient global functions
 template <typename... Args>
-inline void trace(toy::fmt_string<sizeof...(Args)> format, Args &&...args) {
+inline void trace(toy::fmt_string<Args...> format, Args &&...args) {
   get_default_logger()->trace(format, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void debug(toy::fmt_string<sizeof...(Args)> format, Args &&...args) {
+inline void debug(toy::fmt_string<Args...> format, Args &&...args) {
   get_default_logger()->debug(format, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void info(toy::fmt_string<sizeof...(Args)> format, Args &&...args) {
+inline void info(toy::fmt_string<Args...> format, Args &&...args) {
   get_default_logger()->info(format, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void warn(toy::fmt_string<sizeof...(Args)> format, Args &&...args) {
+inline void warn(toy::fmt_string<Args...> format, Args &&...args) {
   get_default_logger()->warn(format, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void error(toy::fmt_string<sizeof...(Args)> format, Args &&...args) {
+inline void error(toy::fmt_string<Args...> format, Args &&...args) {
   get_default_logger()->error(format, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-inline void fatal(toy::fmt_string<sizeof...(Args)> format, Args &&...args) {
+inline void fatal(toy::fmt_string<Args...> format, Args &&...args) {
   get_default_logger()->fatal(format, std::forward<Args>(args)...);
 }
 
