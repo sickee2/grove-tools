@@ -11,11 +11,11 @@
  * for studying standard library implementation principles, not recommended for
  * production use.
  * 
- * Performance benchmarks (10,000 iterations):
- * - Float to string: toy::ftoss (1116μs) vs std::to_chars (1339μs) - ~20% faster
- * - Integer to string: toy::itoss (180μs) vs std::to_chars (249μs) - ~38% faster
- * - String to float: toy::sstof (558μs) vs std::from_chars (485μs) - ~15% slower
- * - String to integer: toy::sstoi (265μs) vs std::from_chars (283μs) - ~6% faster
+ * Performance benchmarks (100,000 iterations):
+ * - Float to string: toy::ftoss (8184μs) vs std::to_chars (13140μs) - ~38% faster
+ * - Integer to string: toy::itoss (1439μs) vs std::to_chars (2467μs) - ~42% faster
+ * - String to float: toy::sstof (6308μs) vs std::from_chars (4905μs) - ~29% slower
+ * - String to integer: toy::sstoi (2708μs) vs std::from_chars (2775μs) - ~2% faster
  * 
  * Key Features:
  * - Support for integer types (including 128-bit integers) and floating-point types
@@ -39,31 +39,6 @@
  * @author Standard library implementation researcher
  * @date 2025
  *
- * ----------------------------------------------------------------------
- * ----------------------------------------------------------------------
- * ----------------------------------------------------------------------
- *
- * @file toy_charconv.hh
- * @brief 高性能字符转换工具库（学习与研究用途）
- * 
- * 本库实现了类似 C++17 std::charconv 的功能，包含字符串与数值类型的相互转换。
- * 主要用于学习和研究标准库实现原理，不建议在生产环境中使用。
- * 
- * 性能测试结果（基于 10000 次迭代）：
- * - 浮点数转字符串：toy::ftoss (1116μs) vs std::to_chars (1339μs) - 快约 20%
- * - 整数转字符串：toy::itoss (180μs) vs std::to_chars (249μs) - 快约 38%
- * - 字符串转浮点数：toy::sstof (558μs) vs std::from_chars (485μs) - 慢约 15%
- * - 字符串转整数：toy::sstoi (265μs) vs std::from_chars (283μs) - 快约 6%
- * 
- * 主要特性：
- * - 支持整数类型（包括 128 位整数）和浮点类型的转换
- * - 支持 2-36 进制转换
- * - 支持固定格式、科学计数法和通用格式
- * - 使用静态表格和优化算法提升性能
- * - 避免动态内存分配，使用栈缓冲区
- * 
- * 注意：此实现为学习目的，可能存在边界情况处理不完善的问题。
- * 
  * @author 学习标准库实现的研究者
  * @date 2025
  * @warning 请勿在生产环境中使用此代码
@@ -90,6 +65,26 @@ struct sstov_result {
 };
 
 namespace detail {
+
+static constexpr uint64_t POW10_TABLE[] = {1,
+                                            10,
+                                            100,
+                                            1000,
+                                            10000,
+                                            100000,
+                                            1000000,
+                                            10000000,
+                                            100000000,
+                                            1000000000,
+                                            10000000000,
+                                            100000000000,
+                                            1000000000000,
+                                            10000000000000,
+                                            100000000000000,
+                                            1000000000000000,
+                                            10000000000000000,
+                                            100000000000000000,
+                                            1000000000000000000};
 
 template <typename T> struct make_unsigned;
 
@@ -146,35 +141,56 @@ inline unsigned_type smart_div_u(unsigned_type n, size_t d) {
   }
 }
 
-template <typename T> struct promote_float;
+template<typename T> struct fp_traits;
 
-template <> struct promote_float<float> {
-  using type = double;
+template<> struct fp_traits<float> {
+  using uint_type = uint32_t;
+  using store_type = uint32_t;
+  using up_store_type = uint64_t;  // 用于中间计算的上位类型
+  using promote_type = double;
+  static constexpr int mantissa_bits = 23;
+  static constexpr int exponent_bits = 8;
+  static constexpr int exponent_bias = 127;
+  static constexpr uint32_t mantissa_mask = 0x7FFFFF;
+  static constexpr uint32_t implicit_bit = 0x800000;
+  static constexpr int max_decimal_digits = 8;
+  static constexpr int max_shift_bits = 63;
 };
 
-template <> struct promote_float<double> {
-  using type = long double;
+template<> struct fp_traits<double> {
+  using uint_type = uint64_t;
+  using store_type = uint64_t;
+  using up_store_type = __uint128_t;  // 用于中间计算的上位类型
+  using promote_type = long double;
+  static constexpr int mantissa_bits = 52;
+  static constexpr int exponent_bits = 11;
+  static constexpr int exponent_bias = 1023;
+  static constexpr uint64_t mantissa_mask = 0xFFFFFFFFFFFFFULL;
+  static constexpr uint64_t implicit_bit = 0x10000000000000ULL;
+  static constexpr int max_decimal_digits = 17;
+  static constexpr int max_shift_bits = 127;
 };
 
-template <> struct promote_float<long double> {
-  using type = long double;
+#ifdef __SIZEOF_FLOAT128__
+// 如果有128位浮点数支持
+template<> struct fp_traits<long double> {
+  using uint_type = __uint128_t;
+  using store_type = __uint128_t;
+  using up_store_type = __uint128_t;  // 用于中间计算的上位类型
+  using promote_type = long double;
+  static constexpr int mantissa_bits = 112;
+  static constexpr int exponent_bits = 15;
+  static constexpr int exponent_bias = 16383;
+  static constexpr __uint128_t mantissa_mask = (static_cast<__uint128_t>(1) << 112) - 1;
+  static constexpr __uint128_t implicit_bit = static_cast<__uint128_t>(1) << 112;
+  static constexpr int max_decimal_digits = 34;
+  static constexpr int max_shift_bits = 255;
 };
+#endif
 
-template <typename T> using promote_float_t = typename promote_float<T>::type;
+template <typename T> using promote_float_t = typename fp_traits<T>::promote_type;
 
-template <typename T> struct fp_store;
-
-template <> struct fp_store<float> {
-  using type = uint32_t;
-};
-template <> struct fp_store<double> {
-  using type = uint64_t;
-};
-template <> struct fp_store<long double> {
-  using type = __uint128_t;
-};
-
-template <typename T> using fp_store_t = typename fp_store<T>::type;
+template <typename T> using fp_store_t = typename fp_traits<T>::store_type;
 
 template <typename T> struct promote_integer_u;
 template <> struct promote_integer_u<int8_t> {
@@ -421,6 +437,133 @@ inline sstov_result stoi_alnum_u(const char *first, const char *last,
   }
   return {first, ec};
 }
+  template <typename part_store_u> struct fp_parts_store {
+    part_store_u int_part;
+    part_store_u frac_part;
+  };
+
+template<typename fp_type>
+inline auto get_fp_parts(fp_type value, unsigned precision) 
+    -> fp_parts_store<detail::fp_store_t<fp_type>> {
+  using traits = fp_traits<fp_type>;
+  using uint_type = typename traits::uint_type;
+  using store_type = typename traits::store_type;
+  using up_type = typename traits::up_store_type;
+  
+  // 类型双关访问位表示
+  union {
+    fp_type f;
+    uint_type u;
+  } conv = {value};
+
+  // const bool is_negative = (conv.u >> (traits::mantissa_bits + traits::exponent_bits)) != 0;
+  const int exponent = ((conv.u >> traits::mantissa_bits) & ((1 << traits::exponent_bits) - 1)) 
+                       - traits::exponent_bias;
+  const uint_type mantissa = (conv.u & traits::mantissa_mask) | traits::implicit_bit;
+
+  store_type integer_part = 0;
+  store_type fractional_part = 0;
+  store_type pow10_precision = static_cast<store_type>(POW10_TABLE[precision]);
+
+  // 统一计算参数
+  int effective_exponent = exponent;
+  uint_type effective_mantissa = mantissa;
+  bool is_pure_integer = false;
+
+  if (exponent >= 0) {
+    if (exponent > traits::mantissa_bits) {
+      // 纯整数情况
+      integer_part = static_cast<store_type>(mantissa) << (exponent - traits::mantissa_bits);
+      is_pure_integer = true;
+    }
+  } else {
+    integer_part = 0;
+    effective_exponent = -exponent;
+  }
+
+  if (!is_pure_integer) {
+    const int shift_bits = (exponent >= 0) 
+        ? (traits::mantissa_bits - exponent) 
+        : (traits::mantissa_bits + effective_exponent);
+
+    if (exponent >= 0) {
+      integer_part = static_cast<store_type>(mantissa >> shift_bits);
+      effective_mantissa = mantissa & ((static_cast<uint_type>(1) << shift_bits) - 1);
+    } else {
+      effective_mantissa = mantissa;
+    }
+
+    // 计算小数部分
+    if (shift_bits <= traits::max_shift_bits) {
+      up_type temp = static_cast<up_type>(effective_mantissa) * pow10_precision;
+
+      // 四舍五入
+      if (shift_bits > 0) {
+        if constexpr (std::is_same_v<up_type, uint64_t>) {
+          // 64位版本
+          temp += (static_cast<uint64_t>(1) << (shift_bits - 1));
+        } else {
+          // 128位版本
+          up_type round_offset = 1;
+          round_offset <<= (shift_bits - 1);
+          temp += round_offset;
+        }
+      }
+
+      fractional_part = static_cast<store_type>(temp >> shift_bits);
+
+      // 进位处理
+      if (fractional_part >= pow10_precision) {
+        fractional_part -= pow10_precision;
+        integer_part++;
+        // 极少数情况需要第二次进位
+        if (fractional_part >= pow10_precision) {
+          fractional_part -= pow10_precision;
+          integer_part++;
+        }
+      }
+    }
+  }
+
+  return {integer_part, fractional_part};
+  // fp_part parts;
+  //
+  // // 修复符号处理：不再修改 integer_part，而是在 parts 中记录符号
+  // parts.sign = is_negative;
+  // parts.int_part = static_cast<uint64_t>(integer_part);
+  // parts.frac_part = static_cast<uint64_t>(fractional_part);
+  // parts.precision = precision;
+  //
+  // return parts;
+}
+
+  template <typename fp_type>
+  inline static auto _split_float_u(fp_type value, int precision)
+      -> fp_parts_store<detail::fp_store_t<fp_type>> {
+    return get_fp_parts<fp_type>(value, precision);
+  }
+
+  template <>
+  inline auto _split_float_u<long double>(long double value, int precision)
+      -> fp_parts_store<detail::fp_store_t<long double>> {
+
+    using store_type = detail::fp_store_t<long double>;
+    using promote_type = detail::promote_float_t<long double>;
+
+    store_type scale_factor = POW10_TABLE[precision];
+    store_type scale_factor_extend = POW10_TABLE[precision + 1];
+    store_type integer_part = static_cast<uint64_t>(value);
+    promote_type fractional_part_f = value - integer_part;
+    store_type fractional_part_u = (store_type(fractional_part_f * scale_factor_extend) + 5) / 10;
+    // uint64_t fractional_part_u = uint64_t(fractional_part_f * scale_factor +
+    // 0.5);
+    if (fractional_part_u >= scale_factor) {
+      integer_part++;
+      fractional_part_u = 0;
+    }
+    return {integer_part, fractional_part_u};
+  }
+
 } // namespace detail
 
 namespace detail {
@@ -546,25 +689,6 @@ private:
   char *ptr_;
   char *end_;
 
-  static constexpr uint64_t POW10_TABLE[] = {1,
-                                             10,
-                                             100,
-                                             1000,
-                                             10000,
-                                             100000,
-                                             1000000,
-                                             10000000,
-                                             100000000,
-                                             1000000000,
-                                             10000000000,
-                                             100000000000,
-                                             1000000000000,
-                                             10000000000000,
-                                             100000000000000,
-                                             1000000000000000,
-                                             10000000000000000,
-                                             100000000000000000,
-                                             1000000000000000000};
 
   static constexpr char digits_lower[] = "0123456789abcdefghijklmnopqrstuvwxyz";
   static constexpr char digits_upper[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -677,32 +801,6 @@ private:
     ptr_ = current;
   }
 
-  template <typename part_store_u> struct fp_parts_store {
-    part_store_u int_part;
-    part_store_u frac_part;
-  };
-
-  template <typename fp_type>
-  inline auto _split_float_u(fp_type value, int precision)
-      -> fp_parts_store<detail::fp_store_t<fp_type>> {
-
-    using store_type = detail::fp_store_t<fp_type>;
-    using promote_type = detail::promote_float_t<fp_type>;
-
-    store_type scale_factor = POW10_TABLE[precision];
-    store_type scale_factor_extend = POW10_TABLE[precision + 1];
-    store_type integer_part = static_cast<uint64_t>(value);
-    promote_type fractional_part_f = value - integer_part;
-    store_type fractional_part_u =
-        (store_type(fractional_part_f * scale_factor_extend) + 5) / 10;
-    // uint64_t fractional_part_u = uint64_t(fractional_part_f * scale_factor +
-    // 0.5);
-    if (fractional_part_u >= scale_factor) {
-      integer_part++;
-      fractional_part_u = 0;
-    }
-    return {integer_part, fractional_part_u};
-  }
 
   template <typename T> void _convert_float_integer_part(T value) {
     if (value == 0) {
