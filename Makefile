@@ -26,7 +26,7 @@ CPP_SRC += $(TEST_DIR)/test.cpp
 # CPP_SRC += $(TEST_DIR)/test_char_conv_performance.cpp
 # CPP_SRC += $(TEST_DIR)/test_ftoss.cpp
 # CPP_SRC += $(TEST_DIR)/test_format.cpp
-CPP_SRC += $(TEST_DIR)/test_format_performaence.cpp
+CPP_SRC += $(TEST_DIR)/test_format_performance.cpp
 
 # CPP_SRC += $(TEST_DIR)/test_from_chars.cpp
 # CPP_SRC += $(TEST_DIR)/test_sstoi_edgecases.cpp
