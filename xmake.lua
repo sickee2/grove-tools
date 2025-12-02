@@ -1,10 +1,12 @@
 add_rules("mode.debug", "mode.release")
 add_includedirs("include")
+add_links("fmt")
 target("grstr")
-set_kind("binary")
-add_files("src/*.cpp")
-add_cxxflags("-std=c++26")
-add_links("re2")
+  set_kind("binary")
+  add_files("src/gr/*.cpp")
+  add_files("test/*.cpp")
+  add_cxxflags("-std=c++26")
+  add_links("re2")
 
 --
 -- If you want to known more usage about xmake, please see https://xmake.io

@@ -6,7 +6,8 @@
 using namespace gr;
 
 void test_chars_conv_performance() {
-  int iteration = 10000;
+  int iteration = 100000;
+  console::writeln("\n=== test char conv performance ==> iteration {}", iteration);
   {
     double data[] = {
         134123.1234123,
@@ -81,8 +82,9 @@ void test_chars_conv_performance() {
         "23.1234123",
     };
     console::writeln("\n=== chars to float ===");
+    uint64_t t1, t2;
     {
-      PerformanceTimer t("toy::sstof");
+      PerformanceTimer t("toy::sstof", t1);
       double value;
       for (int i = 0; i < iteration; i++) {
         for (auto v : data) {
@@ -94,7 +96,7 @@ void test_chars_conv_performance() {
       }
     }
     {
-      PerformanceTimer t("std::from_chars");
+      PerformanceTimer t("std::from_chars", t2);
       double value;
       for (int i = 0; i < iteration; i++) {
         for (auto v : data) {
@@ -105,6 +107,7 @@ void test_chars_conv_performance() {
         }
       }
     }
+    console::writeln("  ==> toy/std {:.1f}%", ((double)(t1)/t2)*100);
   }
   {
     gr::str::u8v data[] = {

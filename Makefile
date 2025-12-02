@@ -17,31 +17,35 @@ TARGET = $(BUILD_DIR)/grstr
 SRC_DIR = src
 TEST_DIR = test
 
-CPP_SRC = $(SRC_DIR)/gr/utf_sequence.cpp \
-$(SRC_DIR)/gr/utf_string.cpp \
-$(TEST_DIR)/test.cpp \
-$(TEST_DIR)/test_sstoi_edgecases.cpp \
-$(TEST_DIR)/test_char_conv_performance.cpp \
-$(TEST_DIR)/test_format_performaence.cpp \
+GR_SRC = $(SRC_DIR)/gr/utf_sequence.cpp \
+				 $(SRC_DIR)/gr/utf_string.cpp 
 
-# $(TEST_DIR)/test_bom.cpp \
-# $(TEST_DIR)/test_cbuf.cpp \
-# $(TEST_DIR)/test_convert.cpp \
-# $(TEST_DIR)/test_convert2.cpp \
-# $(TEST_DIR)/test_cptr.cpp \
-# $(TEST_DIR)/test_endian.cpp \
-# $(TEST_DIR)/test_format.cpp \
-# $(TEST_DIR)/test_to_chars.cpp \
-# $(TEST_DIR)/test_iconv.cpp \
-# $(TEST_DIR)/test_logger.cpp \
-# $(TEST_DIR)/test_print.cpp \
-# $(TEST_DIR)/test_printable.cpp \
-# $(TEST_DIR)/test_RE2.cpp \
-# $(TEST_DIR)/test_stoi.cpp \
-# $(TEST_DIR)/test_trim.cpp \
-# $(TEST_DIR)/test_upper_lower.cpp \
-# $(TEST_DIR)/test_utf_string.cpp \
-# $(TEST_DIR)/test_utfiter.cpp
+CPP_SRC = $(GR_SRC)
+
+CPP_SRC += $(TEST_DIR)/test.cpp
+# CPP_SRC += $(TEST_DIR)/test_char_conv_performance.cpp
+# CPP_SRC += $(TEST_DIR)/test_ftoss.cpp
+# CPP_SRC += $(TEST_DIR)/test_format.cpp
+CPP_SRC += $(TEST_DIR)/test_format_performance.cpp
+# CPP_SRC += $(TEST_DIR)/test_from_chars.cpp
+# CPP_SRC += $(TEST_DIR)/test_sstoi_edgecases.cpp
+# CPP_SRC += $(TEST_DIR)/test_bom.cpp
+# CPP_SRC += $(TEST_DIR)/test_cbuf.cpp
+# CPP_SRC += $(TEST_DIR)/test_convert.cpp
+# CPP_SRC += $(TEST_DIR)/test_convert2.cpp
+# CPP_SRC += $(TEST_DIR)/test_cptr.cpp
+# CPP_SRC += $(TEST_DIR)/test_endian.cpp
+# CPP_SRC += $(TEST_DIR)/test_to_chars.cpp
+# CPP_SRC += $(TEST_DIR)/test_iconv.cpp
+# CPP_SRC += $(TEST_DIR)/test_logger.cpp
+# CPP_SRC += $(TEST_DIR)/test_print.cpp
+# CPP_SRC += $(TEST_DIR)/test_printable.cpp
+# CPP_SRC += $(TEST_DIR)/test_RE2.cpp
+# CPP_SRC += $(TEST_DIR)/test_stoi.cpp
+# CPP_SRC += $(TEST_DIR)/test_trim.cpp
+# CPP_SRC += $(TEST_DIR)/test_upper_lower.cpp
+# CPP_SRC += $(TEST_DIR)/test_utf_string.cpp
+# CPP_SRC += $(TEST_DIR)/test_utfiter.cpp
 
 
 # OBJ = $(BUILD_DIR)/main.o
@@ -56,7 +60,7 @@ MSYSTEM := $(shell echo $$MSYSTEM 2>/dev/null)
 
 # Set linker flags based on operating system
 ifeq ($(UNAME_S), Linux)
-    LDFLAGS = $(shell pkg-config --libs re2) -liconv
+    LDFLAGS = $(shell pkg-config --libs re2) -liconv -lfmt
 else
     LDFLAGS = $(shell pkg-config --libs re2) -liconv
 endif

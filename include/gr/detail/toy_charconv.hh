@@ -12,10 +12,10 @@
  * production use.
  * 
  * Performance benchmarks (100,000 iterations):
- * - Float to string: toy::ftoss (8184μs) vs std::to_chars (13140μs) - ~38% faster
- * - Integer to string: toy::itoss (1439μs) vs std::to_chars (2467μs) - ~42% faster
- * - String to float: toy::sstof (6308μs) vs std::from_chars (4905μs) - ~29% slower
- * - String to integer: toy::sstoi (2708μs) vs std::from_chars (2775μs) - ~2% faster
+ * - Float to string: toy::ftoss (8213μs) vs std::to_chars (12955μs) - ~36.6% faster
+ * - Integer to string: toy::itoss (1572μs) vs std::to_chars (2582μs) - ~39.1% faster
+ * - String to float: toy::sstof (4112μs) vs std::from_chars (4442μs) - ~7.4% faster
+ * - String to integer: toy::sstoi (2682μs) vs std::from_chars (3050μs) - ~12.1% faster
  * 
  * Key Features:
  * - Support for integer types (including 128-bit integers) and floating-point types
@@ -29,10 +29,13 @@
  * - Implements specialized algorithms for power-of-2 bases (binary, octal, hexadecimal)
  * - Handles special floating-point values (NaN, infinity)
  * - Provides overflow detection and error reporting via std::errc
+ * - Optimized division/modulo operations for common bases (2, 4, 8, 10, 16, 32)
+ * - Two-digit lookup table for fast decimal conversion
  * 
  * Known Limitations:
- * - Floating-point conversion (ftoss/sstof) is currently slower than std::to_chars/std::from_chars
- *   - toy::sstof: 646μs vs std::from_chars: 486μs (will be optimized in future versions)
+ * - Floating-point conversion precision may have minor differences from std::charconv
+ *   in edge cases (will be optimized in future versions)
+ * - Limited to 17 decimal digits of precision for floating-point types
  * @warning This implementation is for educational purposes only and may have
  *          incomplete edge case handling. Do not use in production environments.
  * 
@@ -456,7 +459,6 @@ inline auto get_fp_parts(fp_type value, unsigned precision)
     uint_type u;
   } conv = {value};
 
-  // const bool is_negative = (conv.u >> (traits::mantissa_bits + traits::exponent_bits)) != 0;
   const int exponent = ((conv.u >> traits::mantissa_bits) & ((1 << traits::exponent_bits) - 1)) 
                        - traits::exponent_bias;
   const uint_type mantissa = (conv.u & traits::mantissa_mask) | traits::implicit_bit;
@@ -526,19 +528,10 @@ inline auto get_fp_parts(fp_type value, unsigned precision)
   }
 
   return {integer_part, fractional_part};
-  // fp_part parts;
-  //
-  // // 修复符号处理：不再修改 integer_part，而是在 parts 中记录符号
-  // parts.sign = is_negative;
-  // parts.int_part = static_cast<uint64_t>(integer_part);
-  // parts.frac_part = static_cast<uint64_t>(fractional_part);
-  // parts.precision = precision;
-  //
-  // return parts;
 }
 
   template <typename fp_type>
-  inline static auto _split_float_u(fp_type value, int precision)
+  inline auto _split_float_u(fp_type value, int precision)
       -> fp_parts_store<detail::fp_store_t<fp_type>> {
     return get_fp_parts<fp_type>(value, precision);
   }
@@ -1230,10 +1223,13 @@ inline toy::sstov_result sstof(const char *first, const char *end,
     frac_p = res.ptr + 1;
   }
 
-  value = float_type(int_part_128 ? int_part_128 : int_part_64);
+  int fallback128 = int_part_128 != 0;
+  value = float_type((fallback128)*int_part_128 + int_part_64 * (!fallback128));
+  // value = float_type(int_part_128 ? int_part_128 : int_part_64);
   if (frac_p) {
     uint64_t frac_part = 0;
-    res = toy::detail::stoi_base10_u(frac_p, end, frac_part);
+    auto frac_part_end = (end - frac_p) > 17 ? frac_p + 17 : end;
+    res = toy::detail::stoi_base10_u(frac_p, frac_part_end, frac_part);
     unsigned frac_digits_count = res.ptr - frac_p;
 
     if (res.ptr - frac_p > 17) {

@@ -98,7 +98,7 @@ void test_from_chars_tpl(){
   }
 }
 
-void test_from_chars(){
+void test_from_chars_edgecases(){
   console::writeln("\n=== test_from_chars => __int128_t ===");
   test_from_chars_tpl<__int128_t>();
   console::writeln("\n=== test_from_chars => __unt128_t ===");

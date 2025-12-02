@@ -9,6 +9,7 @@ using namespace gr;
 void test_re2();
 void test_cbuf();
 void test_chars_conv_performance();
+void test_ftoss();
 void test_utf_convert();
 void test_utf_iter();
 void test_utf_iter2();
@@ -28,9 +29,10 @@ void test_utf_string();
 void test_utf_iter_performance();
 
 void test_from_chars();
+void test_from_chars_edgecases();
 
 int main(){
-
+  // test_ftoss();
   // test_re2();
   // test_cbuf();
   // test_chars_conv_performance();
@@ -52,6 +54,7 @@ int main(){
   // test_utf_string();
   // test_utf_iter_performance();
   // test_from_chars();
+  // test_from_chars_edgecases();
   // console::writeln("{} {}", 1, 2);
   return 0;
 }
