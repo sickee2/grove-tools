@@ -1221,7 +1221,7 @@ inline toy::sstov_result sstof(const char *first, const char *end,
   __uint128_t int_part_128 = 0;
   uint64_t int_part_64 = 0;
   auto res = toy::detail::stoi_base10_u(first, end, int_part_64);
-  if (res.ec != std::errc::result_out_of_range) {
+  if (res.ec == std::errc::result_out_of_range) {
     res = toy::detail::stoi_base10_u(first, end, int_part_128);
   }
 
