@@ -842,6 +842,24 @@ private:
   template <typename unsigned_type>
   static inline void _convert_integer_u_base10(char *&current,
                                                unsigned_type value) {
+    while (value >= 10000) {
+      // 一次处理4位数字
+      auto const q = value / 10000;
+      auto const r = value % 10000;
+      value = q;
+
+      // 处理千位和百位
+      auto const r1 = r / 100;
+      auto const r2 = r % 100;
+
+      const char *pair1 = two_digit_table + (r1 << 1);
+      const char *pair2 = two_digit_table + (r2 << 1);
+
+      *--current = pair2[1];
+      *--current = pair2[0];
+      *--current = pair1[1];
+      *--current = pair1[0];
+    }
     while (value >= 100) {
       auto const q = value / 100;
       auto const r = value % 100;

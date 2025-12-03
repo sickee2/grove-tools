@@ -147,8 +147,11 @@ class format_output {
 
 public:
   constexpr format_output(str::u8 &_ref) : ctxt(_ref) {}
-  inline void put(const char *str) { ctxt.append(str); }
+  inline void put(const char *str) {
+    ctxt.append(str);
+  } // unsafe method, only for constexpr str
   inline void put(const char *str, size_t n) { ctxt.append(str, n); }
+  inline void put(char c) { ctxt.append(&c, 1); };
   inline void put(const str::u8 &str, size_t n) { ctxt.append(str, n); }
   inline void put(const str::u8 &str) { ctxt.append(str.data(), str.size()); }
   inline void put(const std::string &str) {
@@ -159,6 +162,7 @@ public:
   }
   inline void put(str::u8v str) { ctxt.append(str.data(), str.size()); }
   inline void put(size_t n, char fill) { ctxt.append(n, fill); }
+  // inline const char* debug_data() const { return ctxt.data(); }
 };
 
 /**
@@ -228,7 +232,8 @@ try_parse_indexed_placeholder(const char *&ptr, const char *end,
       size_t nested_index;
       if (parent_has_explicit_index) {
         // If parent uses explicit indexing, use the specified index
-        auto status = gr::toy::sstoi(nested_start, nested_end, nested_index, 10);
+        auto status =
+            gr::toy::sstoi(nested_start, nested_end, nested_index, 10);
         if (status.ec != std::errc{}) {
           throw format_error("gr::toy::format => can not convert chars to "
                              "integer when parse indexed placeholder");
@@ -250,8 +255,7 @@ try_parse_indexed_placeholder(const char *&ptr, const char *end,
 
       try {
         int value;
-        auto status = gr::toy::sstoi(
-            temp_out.data(), temp_out.size(), value);
+        auto status = gr::toy::sstoi(temp_out.data(), temp_out.size(), value);
         if (status.ec != std::errc{}) {
           throw format_error("gr::toy::format => can not convert chars to "
                              "integer when parse indexed placeholder");
@@ -488,18 +492,17 @@ inline void apply_alignment(Output &output, const char *content,
 
   const size_t padding = spec.width - content_len;
   const char fill_char = spec.fill;
-  if(content_len == 0 && spec.width > 0){
+  if (content_len == 0 && spec.width > 0) {
     output.put(padding, fill_char);
     return;
   }
 
   switch (spec.align) {
-  case '<':{
+  case '<': {
     // if(content_len > 0)
     output.put(content, content_len);
     output.put(padding, fill_char);
-    }
-  break;
+  } break;
   case '>': // Right alignment
     output.put(padding, fill_char);
     output.put(content, content_len);
@@ -511,7 +514,7 @@ inline void apply_alignment(Output &output, const char *content,
     output.put(content, content_len);
     output.put(right_pad, fill_char);
     break;
-    }
+  }
   default:
     output.put(content, content_len);
     output.put(padding, fill_char);
@@ -574,8 +577,7 @@ pre_parse_integer_type(const format_spec &spec) {
   return std::make_tuple(base, uppercase);
 }
 
-template <typename T>
-constexpr unsigned make_general_integer_buffer_size(){
+template <typename T> constexpr unsigned make_general_integer_buffer_size() {
   switch (sizeof(T)) {
   case 1:
   case 2:
@@ -595,42 +597,41 @@ constexpr unsigned make_general_integer_buffer_size(){
  * Supports decimal, binary, octal, and hexadecimal formats
  */
 template <typename T>
-void format_integer_impl(format_output &out, T value,
-                           const format_spec &spec) {
-  // Fast path: use std::to_chars for simple cases
+void format_integer_impl(format_output &out, T value, const format_spec &spec) {
+  // Fast path
   if (spec.width <= 0 && spec.precision < 0 && !spec.alternate &&
-      (spec.type == '\0' || spec.type == 'd') && spec.sign == '-') {
+      (spec.type == '\0' || spec.type == 'd')) {
     constexpr unsigned buffer_size = make_general_integer_buffer_size<T>();
     char buffer[buffer_size];
 
     auto [ptr, len] = itoss(buffer, buffer_size, value, 10);
-    if(ptr != nullptr){
+    if (ptr != nullptr) {
       out.put(ptr, len);
-      return;
     }
+    return;
   }
 
-  auto [base,  uppercase] = pre_parse_integer_type(spec);
-  if(base == 2){
+  auto [base, uppercase] = pre_parse_integer_type(spec);
+  if (base == 2) {
     constexpr size_t buffer_size = (sizeof(T) << 3) + 8;
-    bool alternate = spec.alternate;
     char buffer[buffer_size];
-    auto [ptr, size] = itoss(buffer, buffer_size, value, base, uppercase, alternate);
+    auto [ptr, size] =
+        itoss(buffer, buffer_size, value, base, uppercase, spec.alternate);
     apply_alignment(out, ptr, size, spec);
-  }else{
+  } else {
     constexpr unsigned buffer_size = make_general_integer_buffer_size<T>();
-    bool alternate = spec.alternate;
     char buffer[buffer_size];
-    auto [ptr, size] = itoss(buffer, buffer_size, value, base, uppercase, alternate);
+    auto [ptr, size] =
+        itoss(buffer, buffer_size, value, base, uppercase, spec.alternate);
     apply_alignment(out, ptr, size, spec);
   }
 }
 
-template <typename T> constexpr int make_float_general_precision(){
+template <typename T> constexpr int make_float_general_precision() {
   int precision = -1;
   if constexpr (std::is_same_v<T, float>) {
     precision = 5;
-  } else if constexpr (std::is_same_v<T, double>){
+  } else if constexpr (std::is_same_v<T, double>) {
     precision = 8;
   } else {
     precision = 17;
@@ -657,11 +658,13 @@ inline void format_float(format_output &out, T value, const format_spec &spec) {
   if ((spec.type == '\0' || spec.type == 'g' || spec.type == 'G') &&
       spec.width <= 0 && spec.precision < 0 && spec.sign == '-') {
     char buffer[32] = {};
-    int precision = spec.precision >= 0 ? spec.precision : make_float_general_precision<T>();
-    if(spec.precision >= 0){
+    int precision = spec.precision >= 0 ? spec.precision
+                                        : make_float_general_precision<T>();
+    if (spec.precision >= 0) {
       precision = spec.precision;
     }
-    auto [ptr, len] = ftoss(buffer, 32, value, toy::chars_format::general, precision);
+    auto [ptr, len] =
+        ftoss(buffer, 32, value, toy::chars_format::general, precision);
     if (nullptr != ptr) {
       out.put(ptr, len);
       return;
@@ -724,13 +727,15 @@ inline void format_float(format_output &out, T value, const format_spec &spec) {
     precision = spec.precision;
   }
 
-  // if (enum_format_type == toy::chars_format::fixed && (ext_type == 'l' || ext_type == 'L')) {
+  // if (enum_format_type == toy::chars_format::fixed && (ext_type == 'l' ||
+  // ext_type == 'L')) {
   //   // TODO: Unsupport format huge float with 'le' or 'lf' now.
   //   (void)ext_type;
   //   // return;
   // }
-  auto [s, len] = ftoss(buffer, BUFFER_SIZE - 1, value, enum_format_type, precision, uppercase);
-  if(nullptr != s){
+  auto [s, len] = ftoss(buffer, BUFFER_SIZE - 1, value, enum_format_type,
+                        precision, uppercase);
+  if (nullptr != s) {
     apply_alignment(out, buffer, len, spec);
   }
 }
@@ -1052,7 +1057,7 @@ void format_pointer(format_output &out, const T *value,
   buffer[0] = '0';
   buffer[1] = 'x';
   auto [s, len] = itoss(buffer + 2, sizeof(buffer) - 2, addr, 16);
-  if(nullptr != s){
+  if (nullptr != s) {
     apply_alignment(out, buffer, len, spec);
   } else {
     throw format_error("gr::toy::format => Pointer formatting failed");
@@ -1073,7 +1078,6 @@ template <typename T> struct formatter;
 //     format_string(result, str::u8v(str.data(), str.size()), spec);
 //   }
 // };
-
 
 // Specializations for various types
 template <size_t N> struct formatter<char[N]> {
@@ -1119,7 +1123,6 @@ template <> struct formatter<char> {
   void operator()(format_output &out, char value, const format_spec &spec) {
     switch (spec.type) {
     case 'd':
-    case 'i':
       format_integer_impl(out, int(value), spec);
       break;
     case 's':
@@ -1133,7 +1136,6 @@ template <> struct formatter<bool> {
   void operator()(format_output &out, bool value, const format_spec &spec) {
     switch (spec.type) {
     case 'd':
-    case 'i':
       if (value) {
         format_string_impl(out, "1", 1, spec);
       } else {
@@ -1402,7 +1404,7 @@ GR_CONSTEXPR_OR_INLINE void parse_argument_index(const char *format_start,
  *       - fmt_string(const char *s, size_t) is runtime format string
  *       - fmt_string(str::u8v s) is runtime format string
  */
-template <typename...Args> class fstring {
+template <typename... Args> class fstring {
   const char *str_;
   size_t size_;
 
@@ -1536,7 +1538,8 @@ private:
     return static_cast<size_t>(-1);
   }
 
-  // static consteval void constexpr_check_format_spec(const char* s, size_t N, size_t pos){
+  // static consteval void constexpr_check_format_spec(const char* s, size_t N,
+  // size_t pos){
   //
   // }
 };
@@ -1556,84 +1559,83 @@ public:
 };
 #endif
 
-template <typename...T>
-using fmt_string = fstring<T...>::type;
+template <typename... T> using fmt_string = fstring<T...>::type;
 
 template <typename... Args>
-void format_to(format_output& out, fmt_string<Args...> fmt, Args &&...args) {
-  // Store argument references directly
+void format_to(format_output &out, fmt_string<Args...> fmt, Args &&...args) {
   auto args_storage = std::forward_as_tuple(std::forward<Args>(args)...);
-
   const char *data = fmt.data();
   size_t size = fmt.size();
-  size_t pos = 0;
 
-  // Precompute argument count to avoid repeated calculation
+  // 预计算常量
   constexpr size_t arg_count = sizeof...(Args);
-
-  // Auto index counter (reset on each call)
   size_t auto_index = 0;
 
-  while (pos < size) {
-    const char *current = data + pos;
+  // 使用指针遍历而不是索引
+  const char *ptr = data;
+  const char *end = data + size;
 
-    // Use memchr for fast brace finding
-    const char *open_brace =
-        static_cast<const char *>(std::memchr(current, '{', size - pos));
-    const char *close_brace =
-        static_cast<const char *>(std::memchr(current, '}', size - pos));
+  while (ptr < end) {
+    // 快速查找下一个 '{' 或 '}'
+    const char *next_special = ptr;
 
-    const char *next_brace = nullptr;
-    if (open_brace && close_brace) {
-      next_brace = (open_brace < close_brace) ? open_brace : close_brace;
-    } else if (open_brace) {
-      next_brace = open_brace;
-    } else if (close_brace) {
-      next_brace = close_brace;
-    } else {
-      // No more braces, append remaining text directly
-      out.put(current, size - pos);
+    // const char *open_brace = static_cast<const char *>(std::memchr(ptr, '{', end - next_special));
+    // const char *close_brace = static_cast<const char *>(std::memchr(ptr, '}', end - next_special));
+
+    while (next_special < end && *next_special != '{' && *next_special != '}') {
+      ++next_special;
+    }
+
+    // 输出普通文本
+    if (next_special > ptr) {
+      out.put(ptr, next_special - ptr);
+      ptr = next_special;
+    }
+
+    if (ptr >= end)
       break;
-    }
 
-    // Add text before brace
-    if (next_brace > current) {
-      out.put(current, next_brace - current);
-      pos += (next_brace - current);
-    }
-
-    if (*next_brace == '{') {
-      if (next_brace + 1 < data + size && next_brace[1] == '{') {
+    if (*ptr == '{') {
+      if (ptr + 1 < end && ptr[1] == '{') {
+        // 转义 '{'
         out.put('{');
-        pos += 2;
+        ptr += 2;
       } else {
-        // Use smart method to match right brace
-        const char *end_brace = next_brace + 1;
-        int brace_level = 1; // Track brace level
+        // 使用智能方法匹配右括号，支持嵌套
+        const char *placeholder_end = ptr + 1;
+        int brace_level = 1; // 跟踪括号层级
 
-        while (end_brace < data + size && brace_level > 0) {
-          if (*end_brace == '{') {
+        while (placeholder_end < end && brace_level > 0) {
+          if (*placeholder_end == '{') {
             brace_level++;
-          } else if (*end_brace == '}') {
+          } else if (*placeholder_end == '}') {
             brace_level--;
           }
-          end_brace++;
+          placeholder_end++;
         }
 
         if (brace_level > 0) {
           throw format_error("gr::toy::format => Unclosed format brace");
         }
 
-        // Change end_brace point last char after placeholder
-        end_brace--;
+        // placeholder_end 现在指向 '}' 之后的位置
+        placeholder_end--; // 回到 '}' 字符
 
-        // Parse argument index and format specifier
-        const char *format_start = next_brace + 1;
-        const char *format_end = end_brace;
+        // 解析格式说明符
+        const char *format_start = ptr + 1;
+        const char *format_end = placeholder_end;
 
-        // Find colon separator
+        // 查找冒号（但跳过嵌套的 {}）
         const char *colon = format_start;
-        while (colon < format_end && *colon != ':') {
+        int nested_level = 0;
+        while (colon < format_end) {
+          if (*colon == '{') {
+            nested_level++;
+          } else if (*colon == '}') {
+            nested_level--;
+          } else if (*colon == ':' && nested_level == 0) {
+            break;
+          }
           ++colon;
         }
 
@@ -1642,15 +1644,14 @@ void format_to(format_output& out, fmt_string<Args...> fmt, Args &&...args) {
         bool has_explicit_index = false;
 
         if (colon < format_end) {
-          // Has colon, parse sub-index of arg
+          // 有格式说明符
           detail::parse_argument_index(format_start, colon, arg_index,
                                        auto_index, has_explicit_index);
-          // Parse format specifier with support for nested arguments
           spec = detail::parse_format_spec_with_args(
               colon + 1, format_end, args_storage, auto_index, arg_count,
               has_explicit_index);
         } else {
-          // No colon, parse main arg index
+          // 无格式说明符
           detail::parse_argument_index(format_start, format_end, arg_index,
                                        auto_index, has_explicit_index);
         }
@@ -1659,15 +1660,16 @@ void format_to(format_output& out, fmt_string<Args...> fmt, Args &&...args) {
           throw format_error("gr::toy::format => Argument index out of range");
         }
 
-        // Use optimized argument dispatch
+        // 格式化参数
         detail::format_arg_dispatch(out, args_storage, arg_index, spec);
 
-        pos = end_brace - data + 1;
+        ptr = placeholder_end + 1;
       }
-    } else { // *next_brace == '}'
-      if (next_brace + 1 < data + size && next_brace[1] == '}') {
+    } else { // *ptr == '}'
+      if (ptr + 1 < end && ptr[1] == '}') {
+        // 转义 '}'
         out.put('}');
-        pos += 2;
+        ptr += 2;
       } else {
         throw format_error("gr::toy::format => Unmatched closing brace");
       }
