@@ -10,18 +10,18 @@
  * syntax with significant performance advantages over std::format.
  *
  * Performance Highlights (based on benchmark tests):
- * - Integer formatting: ~32% faster than std::format
- * - Floating point: ~41% faster than std::format
- * - String formatting: ~27% faster than std::format
- * - Pointer formatting: ~50% faster than std::format
- * - Overall throughput: ~78% higher than std::format
- * - Memory allocation: ~35% faster than std::format
+ * - Integer formatting: ~133% faster than std::format, ~1.8% faster than fmt::format
+ * - Floating point: ~95% faster than std::format, ~32% faster than fmt::format
+ * - String formatting: ~96% faster than std::format, ~57% faster than fmt::format
+ * - Pointer formatting: ~123% faster than std::format, ~109% faster than fmt::format
+ * - Overall throughput: ~96% higher than std::format, ~6% higher than fmt::format
+ * - Memory allocation: ~79% faster than std::format
  *
  * Performance Comparison (100,000 iterations):
- * - Basic integer: std::format 3516μs vs toy::format 2392μs (32% faster)
- * - Floating point: std::format 8498μs vs toy::format 5012μs (41% faster)
- * - String formatting: std::format 3681μs vs toy::format 2680μs (27% faster)
- * - Throughput: std::format 7.04M ops/sec vs toy::format 12.50M ops/sec (78% higher)
+ * - Basic integer: std::format 5997μs vs fmt::format 2621μs vs toy::format 2575μs
+ * - Floating point: std::format 7947μs vs fmt::format 5358μs vs toy::format 4068μs
+ * - String formatting: std::format 4039μs vs fmt::format 3234μs vs toy::format 2063μs
+ * - Throughput: std::format 7.03M ops/sec vs fmt::format 12.98M ops/sec vs toy::format 13.74M ops/sec
  *
  * Key Features:
  * - High performance: 25-60% faster than std::format in most scenarios
@@ -488,8 +488,18 @@ inline void apply_alignment(Output &output, const char *content,
 
   const size_t padding = spec.width - content_len;
   const char fill_char = spec.fill;
+  if(content_len == 0 && spec.width > 0){
+    output.put(padding, fill_char);
+    return;
+  }
 
   switch (spec.align) {
+  case '<':{
+    // if(content_len > 0)
+    output.put(content, content_len);
+    output.put(padding, fill_char);
+    }
+  break;
   case '>': // Right alignment
     output.put(padding, fill_char);
     output.put(content, content_len);
@@ -501,12 +511,10 @@ inline void apply_alignment(Output &output, const char *content,
     output.put(content, content_len);
     output.put(right_pad, fill_char);
     break;
-  }
-  case '<': // Left alignment (default)
+    }
   default:
     output.put(content, content_len);
     output.put(padding, fill_char);
-    break;
   }
 }
 
@@ -595,7 +603,7 @@ void format_integer_impl(format_output &out, T value,
     constexpr unsigned buffer_size = make_general_integer_buffer_size<T>();
     char buffer[buffer_size];
 
-    auto [ptr, len] = itoss(buffer, 32, value, 10);
+    auto [ptr, len] = itoss(buffer, buffer_size, value, 10);
     if(ptr != nullptr){
       out.put(ptr, len);
       return;
@@ -663,20 +671,6 @@ inline void format_float(format_output &out, T value, const format_spec &spec) {
   // Integer fast path: if value is integer and precision is 0
   if (spec.precision <= 0 && value == static_cast<int64_t>(value)) {
     format_integer_impl(out, static_cast<int64_t>(value), spec);
-    return;
-  }
-
-  // Fast path for common values
-  if (value == 0.0) {
-    if (spec.precision > 0) {
-      str::u8 buf(spec.precision + 2);
-      buf.append("0.");
-      buf.append(spec.precision, '0');
-      apply_alignment(out, buf.data(), buf.size(), spec);
-    } else {
-      // str::u8 buf("0", 1);
-      apply_alignment(out, "0", 1, spec);
-    }
     return;
   }
 
@@ -1541,6 +1535,10 @@ private:
     }
     return static_cast<size_t>(-1);
   }
+
+  // static consteval void constexpr_check_format_spec(const char* s, size_t N, size_t pos){
+  //
+  // }
 };
 
 #else

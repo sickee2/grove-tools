@@ -134,7 +134,7 @@ void test_basic_formatting_performance() {
 
   // 添加 snprintf 对比
   {
-    PerformanceTimer timer("\tstd::snprintf)");
+    PerformanceTimer timer("\tstd::snprintf");
     for (int i = 0; i < iterations; ++i) {
       char buffer[256];
       std::snprintf(buffer, sizeof(buffer), "String: %s", "Hello World");
@@ -816,7 +816,7 @@ void test_real_world_scenarios() {
 
 void test_toy_format_preformance(){
   gr::console::write(
-      "Starting std::format vs toy::format efficiency comparison test\n\n");
+      "Starting std::format/fmt::format vs toy::format efficiency comparison test\n\n");
 
   test_basic_formatting_performance();
   test_complex_formatting_performance();

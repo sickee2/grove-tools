@@ -120,7 +120,7 @@ void test_chars_conv_performance() {
     {
       PerformanceTimer t("toy::sstoi");
       volatile int64_t ks = 0;
-      int64_t value;
+      int64_t value = 0;
       for (int i = 0; i < iteration; i++) {
         for (auto v : data) {
           auto res = toy::sstoi(v.data(), v.size(), value);
@@ -135,7 +135,7 @@ void test_chars_conv_performance() {
     {
       PerformanceTimer t("std::from_chars");
       volatile int64_t ks = 0;
-      int64_t value;
+      int64_t value = 0;
       for (int i = 0; i < iteration; i++) {
         for (auto v : data) {
           auto res = std::from_chars(v.data(), v.data() + v.size(), value);

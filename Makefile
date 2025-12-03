@@ -1,6 +1,6 @@
 # Compiler settings
-# CXX = g++
-CXX = clang++
+CXX = g++
+# CXX = clang++
 
 INCLUDE = include
 
@@ -23,11 +23,10 @@ GR_SRC = $(SRC_DIR)/gr/utf_sequence.cpp \
 CPP_SRC = $(GR_SRC)
 
 CPP_SRC += $(TEST_DIR)/test.cpp
-# CPP_SRC += $(TEST_DIR)/test_char_conv_performance.cpp
+CPP_SRC += $(TEST_DIR)/test_char_conv_performance.cpp
 # CPP_SRC += $(TEST_DIR)/test_ftoss.cpp
 # CPP_SRC += $(TEST_DIR)/test_format.cpp
 CPP_SRC += $(TEST_DIR)/test_format_performance.cpp
-
 # CPP_SRC += $(TEST_DIR)/test_from_chars.cpp
 # CPP_SRC += $(TEST_DIR)/test_sstoi_edgecases.cpp
 # CPP_SRC += $(TEST_DIR)/test_bom.cpp

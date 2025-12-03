@@ -4,41 +4,45 @@
  * Copyright (c) 2025 SICKEE2
  *
  * @file toy_charconv.hh
- * @brief High-performance character conversion utilities (for learning and research purposes)
- * 
- * This library implements functionality similar to C++17 std::charconv, providing
- * bidirectional conversion between strings and numeric types. Primarily designed
- * for studying standard library implementation principles, not recommended for
- * production use.
- * 
+ * @brief High-performance character conversion utilities (for learning and
+ * research purposes)
+ *
+ * This library implements functionality similar to C++17 std::charconv,
+ * providing bidirectional conversion between strings and numeric types.
+ * Primarily designed for studying standard library implementation principles,
+ * not recommended for production use.
+ *
  * Performance benchmarks (100,000 iterations):
- * - Float to string: toy::ftoss (8213μs) vs std::to_chars (12955μs) - ~36.6% faster
+ * - Float to string (fixed): toy::ftoss (15699μs) vs fmt::format (24419μs) - ~35.7% faster
+ * - Float to string (scientific): toy::ftoss (18225μs) vs fmt::format (23696μs) - ~23.1% faster
  * - Integer to string: toy::itoss (1572μs) vs std::to_chars (2582μs) - ~39.1% faster
  * - String to float: toy::sstof (4112μs) vs std::from_chars (4442μs) - ~7.4% faster
  * - String to integer: toy::sstoi (2682μs) vs std::from_chars (3050μs) - ~12.1% faster
- * 
+ *
  * Key Features:
  * - Support for integer types (including 128-bit integers) and floating-point types
  * - Base conversion from 2 to 36
  * - Multiple formatting options: fixed, scientific, and general formats
  * - Performance optimizations using static tables and specialized algorithms
  * - Stack-based buffers to avoid dynamic memory allocation
- * 
+ *
  * Implementation Notes:
  * - Uses lookup tables for digit conversion and power-of-10 calculations
- * - Implements specialized algorithms for power-of-2 bases (binary, octal, hexadecimal)
+ * - Implements specialized algorithms for power-of-2 bases (binary, octal,
+ * hexadecimal)
  * - Handles special floating-point values (NaN, infinity)
  * - Provides overflow detection and error reporting via std::errc
  * - Optimized division/modulo operations for common bases (2, 4, 8, 10, 16, 32)
  * - Two-digit lookup table for fast decimal conversion
- * 
+ *
  * Known Limitations:
- * - Floating-point conversion precision may have minor differences from std::charconv
- *   in edge cases (will be optimized in future versions)
+ * - Floating-point conversion precision may have minor differences from
+ * std::charconv in edge cases (will be optimized in future versions)
  * - Limited to 17 decimal digits of precision for floating-point types
  * @warning This implementation is for educational purposes only and may have
- *          incomplete edge case handling. Do not use in production environments.
- * 
+ *          incomplete edge case handling. Do not use in production
+ * environments.
+ *
  * @author Standard library implementation researcher
  * @date 2025
  *
@@ -70,24 +74,24 @@ struct sstov_result {
 namespace detail {
 
 static constexpr uint64_t POW10_TABLE[] = {1,
-                                            10,
-                                            100,
-                                            1000,
-                                            10000,
-                                            100000,
-                                            1000000,
-                                            10000000,
-                                            100000000,
-                                            1000000000,
-                                            10000000000,
-                                            100000000000,
-                                            1000000000000,
-                                            10000000000000,
-                                            100000000000000,
-                                            1000000000000000,
-                                            10000000000000000,
-                                            100000000000000000,
-                                            1000000000000000000};
+                                           10,
+                                           100,
+                                           1000,
+                                           10000,
+                                           100000,
+                                           1000000,
+                                           10000000,
+                                           100000000,
+                                           1000000000,
+                                           10000000000,
+                                           100000000000,
+                                           1000000000000,
+                                           10000000000000,
+                                           100000000000000,
+                                           1000000000000000,
+                                           10000000000000000,
+                                           100000000000000000,
+                                           1000000000000000000};
 
 template <typename T> struct make_unsigned;
 
@@ -114,7 +118,7 @@ template <typename T> struct supports_integer {
 template <typename T>
 inline constexpr bool supports_integer_v = supports_integer<T>::value;
 
-template<typename unsigned_type>
+template <typename unsigned_type>
 inline size_t smart_mod_u(unsigned_type n, size_t m) {
   // check n^2
   if ((m & (m - 1)) == 0) {
@@ -122,34 +126,50 @@ inline size_t smart_mod_u(unsigned_type n, size_t m) {
   }
   // special
   switch (m) {
-  case 10: return n % 10; break;
-  case 5: return n % 5; break;
-  case 3: return n % 3; break;
-  default: return n % m;
+  case 10:
+    return n % 10;
+    break;
+  case 5:
+    return n % 5;
+    break;
+  case 3:
+    return n % 3;
+    break;
+  default:
+    return n % m;
   }
 }
 
-template<typename unsigned_type>
+template <typename unsigned_type>
 inline unsigned_type smart_div_u(unsigned_type n, size_t d) {
   switch (d) {
-  case 10: return n / 10; // compiler auto optimized
-  case 2: return n >> 1;
-  case 4: return n >> 2;
-  case 8: return n >> 3;
-  case 16: return n >> 4;
-  case 32: return n >> 5;
-  case 5: return n / 5;
-  case 3: return n / 3;
-  default: return n / d; // normal divider
+  case 10:
+    return n / 10; // compiler auto optimized
+  case 2:
+    return n >> 1;
+  case 4:
+    return n >> 2;
+  case 8:
+    return n >> 3;
+  case 16:
+    return n >> 4;
+  case 32:
+    return n >> 5;
+  case 5:
+    return n / 5;
+  case 3:
+    return n / 3;
+  default:
+    return n / d; // normal divider
   }
 }
 
-template<typename T> struct fp_traits;
+template <typename T> struct fp_traits;
 
-template<> struct fp_traits<float> {
+template <> struct fp_traits<float> {
   using uint_type = uint32_t;
   using store_type = uint32_t;
-  using up_store_type = uint64_t;  // 用于中间计算的上位类型
+  using up_store_type = uint64_t; // Upper type for intermediate calculations
   using promote_type = double;
   static constexpr int mantissa_bits = 23;
   static constexpr int exponent_bits = 8;
@@ -160,10 +180,10 @@ template<> struct fp_traits<float> {
   static constexpr int max_shift_bits = 63;
 };
 
-template<> struct fp_traits<double> {
+template <> struct fp_traits<double> {
   using uint_type = uint64_t;
   using store_type = uint64_t;
-  using up_store_type = __uint128_t;  // 用于中间计算的上位类型
+  using up_store_type = __uint128_t; // Upper type for intermediate calculations
   using promote_type = long double;
   static constexpr int mantissa_bits = 52;
   static constexpr int exponent_bits = 11;
@@ -175,23 +195,26 @@ template<> struct fp_traits<double> {
 };
 
 #ifdef __SIZEOF_FLOAT128__
-// 如果有128位浮点数支持
-template<> struct fp_traits<long double> {
+// If 128-bit floating-point support is available
+template <> struct fp_traits<long double> {
   using uint_type = __uint128_t;
   using store_type = __uint128_t;
-  using up_store_type = __uint128_t;  // 用于中间计算的上位类型
+  using up_store_type = __uint128_t; // Upper type for intermediate calculations
   using promote_type = long double;
   static constexpr int mantissa_bits = 112;
   static constexpr int exponent_bits = 15;
   static constexpr int exponent_bias = 16383;
-  static constexpr __uint128_t mantissa_mask = (static_cast<__uint128_t>(1) << 112) - 1;
-  static constexpr __uint128_t implicit_bit = static_cast<__uint128_t>(1) << 112;
+  static constexpr __uint128_t mantissa_mask =
+      (static_cast<__uint128_t>(1) << 112) - 1;
+  static constexpr __uint128_t implicit_bit = static_cast<__uint128_t>(1)
+                                              << 112;
   static constexpr int max_decimal_digits = 34;
   static constexpr int max_shift_bits = 255;
 };
 #endif
 
-template <typename T> using promote_float_t = typename fp_traits<T>::promote_type;
+template <typename T>
+using promote_float_t = typename fp_traits<T>::promote_type;
 
 template <typename T> using fp_store_t = typename fp_traits<T>::store_type;
 
@@ -221,44 +244,31 @@ template <> struct promote_integer_u<uint64_t> {
   using type = __uint128_t;
 };
 
-template <typename T>
-struct is_signed{
- constexpr static bool value = std::is_signed_v<T>;
+template <typename T> struct is_signed {
+  constexpr static bool value = std::is_signed_v<T>;
 };
-template <>
-struct is_signed<__uint128_t>{
+template <> struct is_signed<__uint128_t> {
   constexpr static bool value = false;
 };
-template <>
-struct is_signed<__int128_t>{
+template <> struct is_signed<__int128_t> {
   constexpr static bool value = true;
 };
 
-template<typename T>
-struct numeric_limits{
-  constexpr static T max(){
-    return std::numeric_limits<T>::max();
-  }
-  constexpr static T min(){
-    return std::numeric_limits<T>::min();
-  }
+template <typename T> struct numeric_limits {
+  constexpr static T max() { return std::numeric_limits<T>::max(); }
+  constexpr static T min() { return std::numeric_limits<T>::min(); }
 };
 
-template<>
-struct numeric_limits<__uint128_t>{
-  constexpr static __uint128_t max(){
-    return __uint128_t(-1);
-  }
-  constexpr static __uint128_t min(){
-    return 0;
-  }
+template <> struct numeric_limits<__uint128_t> {
+  constexpr static __uint128_t max() { return __uint128_t(-1); }
+  constexpr static __uint128_t min() { return 0; }
 };
 
-template<>
-struct numeric_limits<__int128_t>{
-  constexpr static __int128_t max(){
-    return ((__int128_t(0x7FFFFFFFFFFFFFFF) << 64) | 0xFFFFFFFFFFFFFFFF);  }
-  constexpr static __int128_t min(){
+template <> struct numeric_limits<__int128_t> {
+  constexpr static __int128_t max() {
+    return ((__int128_t(0x7FFFFFFFFFFFFFFF) << 64) | 0xFFFFFFFFFFFFFFFF);
+  }
+  constexpr static __int128_t min() {
     return ((__int128_t(0x8000000000000000) << 64));
   }
 };
@@ -326,7 +336,7 @@ constexpr int char_to_digit(char c) {
 
 template <bool IsOctal, typename UnsignedType>
 inline sstov_result stoi_pow2_base_u(const char *first, const char *last,
-                                   UnsignedType &result, unsigned base) {
+                                     UnsignedType &result, unsigned base) {
   const unsigned shift = IsOctal ? 3 : (base == 2 ? 1 : 4);
   constexpr UnsignedType max_value = UnsignedType(-1);
   const UnsignedType max_safe = max_value >> shift;
@@ -338,19 +348,19 @@ inline sstov_result stoi_pow2_base_u(const char *first, const char *last,
     if (digit >= base) {
       break;
     }
-    if(result > max_safe){
+    if (result > max_safe) {
       ec = std::errc::result_out_of_range;
       break;
     }
     UnsignedType new_result = result << shift;
-    if(new_result > max_value - digit){
+    if (new_result > max_value - digit) {
       ec = std::errc::result_out_of_range;
-      break; 
+      break;
     }
     result = new_result + UnsignedType(digit);
     ++first;
   }
-  while(first < last){
+  while (first < last) {
     unsigned digit = toy::detail::char_to_digit(*first);
     if (digit >= 10) {
       break;
@@ -362,20 +372,20 @@ inline sstov_result stoi_pow2_base_u(const char *first, const char *last,
 
 template <typename UnsignedType>
 inline sstov_result stoi_base10_u(const char *first, const char *last,
-                                UnsignedType &result) {
+                                  UnsignedType &result) {
 
   result = 0;
   std::errc ec{};
   constexpr UnsignedType max_value = UnsignedType(-1);
   constexpr UnsignedType max_safe = UnsignedType(-1) / 10;
 
-  while(first < last && ec == std::errc{}){
+  while (first < last && ec == std::errc{}) {
     unsigned digit = toy::detail::char_to_digit(*first);
     if (digit >= 10) {
       break;
     }
 
-    if(result > max_safe){
+    if (result > max_safe) {
       ec = std::errc::result_out_of_range;
       break;
     }
@@ -391,7 +401,7 @@ inline sstov_result stoi_base10_u(const char *first, const char *last,
     ++first;
   }
 
-  while(first < last){
+  while (first < last) {
     unsigned digit = toy::detail::char_to_digit(*first);
     if (digit >= 10) {
       break;
@@ -403,19 +413,19 @@ inline sstov_result stoi_base10_u(const char *first, const char *last,
 
 template <typename UnsignedType>
 inline sstov_result stoi_alnum_u(const char *first, const char *last,
-                               UnsignedType &result, unsigned base) {
+                                 UnsignedType &result, unsigned base) {
   result = 0;
   std::errc ec{};
   constexpr UnsignedType max_value = UnsignedType(-1);
   const UnsignedType max_safe = UnsignedType(-1) / base;
 
-  while(first < last && ec == std::errc{}){
+  while (first < last && ec == std::errc{}) {
     unsigned digit = toy::detail::char_to_digit(*first);
     if (digit >= base) {
       break;
     }
 
-    if(result > max_safe){
+    if (result > max_safe) {
       ec = std::errc::result_out_of_range;
       break;
     }
@@ -431,7 +441,7 @@ inline sstov_result stoi_alnum_u(const char *first, const char *last,
     ++first;
   }
 
-  while(first < last){
+  while (first < last) {
     unsigned digit = toy::detail::char_to_digit(*first);
     if (digit >= base) {
       break;
@@ -440,42 +450,45 @@ inline sstov_result stoi_alnum_u(const char *first, const char *last,
   }
   return {first, ec};
 }
-  template <typename part_store_u> struct fp_parts_store {
-    part_store_u int_part;
-    part_store_u frac_part;
-  };
+template <typename part_store_u> struct fp_parts_store {
+  part_store_u int_part;
+  part_store_u frac_part;
+};
 
-template<typename fp_type>
-inline auto get_fp_parts(fp_type value, unsigned precision) 
+template <typename fp_type>
+inline auto get_fp_parts(fp_type value, unsigned precision)
     -> fp_parts_store<detail::fp_store_t<fp_type>> {
   using traits = fp_traits<fp_type>;
   using uint_type = typename traits::uint_type;
   using store_type = typename traits::store_type;
   using up_type = typename traits::up_store_type;
-  
-  // 类型双关访问位表示
+
+  // Type punning to access bit representation
   union {
     fp_type f;
     uint_type u;
   } conv = {value};
 
-  const int exponent = ((conv.u >> traits::mantissa_bits) & ((1 << traits::exponent_bits) - 1)) 
-                       - traits::exponent_bias;
-  const uint_type mantissa = (conv.u & traits::mantissa_mask) | traits::implicit_bit;
+  const int exponent =
+      ((conv.u >> traits::mantissa_bits) & ((1 << traits::exponent_bits) - 1)) -
+      traits::exponent_bias;
+  const uint_type mantissa =
+      (conv.u & traits::mantissa_mask) | traits::implicit_bit;
 
   store_type integer_part = 0;
   store_type fractional_part = 0;
   store_type pow10_precision = static_cast<store_type>(POW10_TABLE[precision]);
 
-  // 统一计算参数
+  // Unified calculation parameters
   int effective_exponent = exponent;
   uint_type effective_mantissa = mantissa;
   bool is_pure_integer = false;
 
   if (exponent >= 0) {
     if (exponent > traits::mantissa_bits) {
-      // 纯整数情况
-      integer_part = static_cast<store_type>(mantissa) << (exponent - traits::mantissa_bits);
+      // Pure integer case
+      integer_part = static_cast<store_type>(mantissa)
+                     << (exponent - traits::mantissa_bits);
       is_pure_integer = true;
     }
   } else {
@@ -484,28 +497,29 @@ inline auto get_fp_parts(fp_type value, unsigned precision)
   }
 
   if (!is_pure_integer) {
-    const int shift_bits = (exponent >= 0) 
-        ? (traits::mantissa_bits - exponent) 
-        : (traits::mantissa_bits + effective_exponent);
+    const int shift_bits = (exponent >= 0)
+                               ? (traits::mantissa_bits - exponent)
+                               : (traits::mantissa_bits + effective_exponent);
 
     if (exponent >= 0) {
       integer_part = static_cast<store_type>(mantissa >> shift_bits);
-      effective_mantissa = mantissa & ((static_cast<uint_type>(1) << shift_bits) - 1);
+      effective_mantissa =
+          mantissa & ((static_cast<uint_type>(1) << shift_bits) - 1);
     } else {
       effective_mantissa = mantissa;
     }
 
-    // 计算小数部分
+    // Calculate fractional part
     if (shift_bits <= traits::max_shift_bits) {
       up_type temp = static_cast<up_type>(effective_mantissa) * pow10_precision;
 
-      // 四舍五入
+      // Rounding
       if (shift_bits > 0) {
         if constexpr (std::is_same_v<up_type, uint64_t>) {
-          // 64位版本
+          // 64-bit version
           temp += (static_cast<uint64_t>(1) << (shift_bits - 1));
         } else {
-          // 128位版本
+          // 128-bit version
           up_type round_offset = 1;
           round_offset <<= (shift_bits - 1);
           temp += round_offset;
@@ -514,11 +528,11 @@ inline auto get_fp_parts(fp_type value, unsigned precision)
 
       fractional_part = static_cast<store_type>(temp >> shift_bits);
 
-      // 进位处理
+      // Carry handling
       if (fractional_part >= pow10_precision) {
         fractional_part -= pow10_precision;
         integer_part++;
-        // 极少数情况需要第二次进位
+        // Rare case requiring second carry
         if (fractional_part >= pow10_precision) {
           fractional_part -= pow10_precision;
           integer_part++;
@@ -530,33 +544,112 @@ inline auto get_fp_parts(fp_type value, unsigned precision)
   return {integer_part, fractional_part};
 }
 
-  template <typename fp_type>
-  inline auto _split_float_u(fp_type value, int precision)
-      -> fp_parts_store<detail::fp_store_t<fp_type>> {
-    return get_fp_parts<fp_type>(value, precision);
+template <typename fp_type>
+inline auto _split_float_u(fp_type value, int precision)
+    -> fp_parts_store<detail::fp_store_t<fp_type>> {
+  return get_fp_parts<fp_type>(value, precision);
+}
+
+template <>
+inline auto _split_float_u<long double>(long double value, int precision)
+    -> fp_parts_store<detail::fp_store_t<long double>> {
+
+  using store_type = detail::fp_store_t<long double>;
+  using promote_type = detail::promote_float_t<long double>;
+
+  store_type scale_factor = POW10_TABLE[precision];
+  store_type scale_factor_extend = POW10_TABLE[precision + 1];
+  store_type integer_part = static_cast<uint64_t>(value);
+  promote_type fractional_part_f = value - integer_part;
+  store_type fractional_part_u =
+      (store_type(fractional_part_f * scale_factor_extend) + 5) / 10;
+  // uint64_t fractional_part_u = uint64_t(fractional_part_f * scale_factor +
+  // 0.5);
+  if (fractional_part_u >= scale_factor) {
+    integer_part++;
+    fractional_part_u = 0;
   }
+  return {integer_part, fractional_part_u};
+}
 
-  template <>
-  inline auto _split_float_u<long double>(long double value, int precision)
-      -> fp_parts_store<detail::fp_store_t<long double>> {
+template <typename T> struct exponent_calculator;
 
-    using store_type = detail::fp_store_t<long double>;
-    using promote_type = detail::promote_float_t<long double>;
+template <> struct exponent_calculator<float> {
+  static int calculate(float abs_value) {
+    // Quick check for common range
+    if (abs_value >= 1e-4f && abs_value <= 1e6f) {
+      // Fast estimation using bit manipulation
+      uint32_t bits;
+      std::memcpy(&bits, &abs_value, sizeof(float));
+      int32_t e = ((bits >> 23) & 0xFF) - 127;
 
-    store_type scale_factor = POW10_TABLE[precision];
-    store_type scale_factor_extend = POW10_TABLE[precision + 1];
-    store_type integer_part = static_cast<uint64_t>(value);
-    promote_type fractional_part_f = value - integer_part;
-    store_type fractional_part_u = (store_type(fractional_part_f * scale_factor_extend) + 5) / 10;
-    // uint64_t fractional_part_u = uint64_t(fractional_part_f * scale_factor +
-    // 0.5);
-    if (fractional_part_u >= scale_factor) {
-      integer_part++;
-      fractional_part_u = 0;
+      // log10(2) ≈ 0.30102999566
+      // Using fixed-point arithmetic
+      int exponent = (e * 30103 + 50000) / 100000; // 四舍五入
+
+      // Quick adjustment
+      static constexpr float COMMON_POW10[] = {
+          1e-4f, 1e-3f, 1e-2f, 1e-1f, 1e0f, 1e1f, 1e2f, 1e3f, 1e4f, 1e5f, 1e6f};
+
+      // Binary search adjustment
+      int low = 0, high = 10;
+      while (low <= high) {
+        int mid = (low + high) / 2;
+        if (abs_value >= COMMON_POW10[mid]) {
+          exponent = mid - 4; // 偏移：-4到6
+          low = mid + 1;
+        } else {
+          high = mid - 1;
+        }
+      }
+      return exponent;
+    } else {
+      // Use standard method for uncommon ranges
+      return static_cast<int>(std::floor(std::log10f(abs_value)));
     }
-    return {integer_part, fractional_part_u};
   }
+};
 
+template <> struct exponent_calculator<double> {
+  static int calculate(double abs_value) {
+    // Quick check for common range
+    if (abs_value >= 1e-4 && abs_value <= 1e6) {
+      // Fast estimation using bit manipulation
+      uint64_t bits;
+      std::memcpy(&bits, &abs_value, sizeof(double));
+      int32_t e = ((bits >> 52) & 0x7FF) - 1023;
+
+      // More precise fixed-point arithmetic
+      int exponent = (e * 301029995 + 500000000) / 1000000000;
+
+      // Common range adjustment
+      static constexpr double COMMON_POW10[] = {
+          1e-4, 1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6};
+
+      int low = 0, high = 10;
+      while (low <= high) {
+        int mid = (low + high) / 2;
+        if (abs_value >= COMMON_POW10[mid]) {
+          exponent = mid - 4;
+          low = mid + 1;
+        } else {
+          high = mid - 1;
+        }
+      }
+      return exponent;
+    } else {
+      // Use standard method for uncommon ranges
+      return static_cast<int>(std::floor(std::log10(abs_value)));
+    }
+  }
+};
+
+template <typename T> struct exponent_calculator {
+  static int calculate(T abs_value) {
+    // Use standard method
+    return static_cast<int>(std::floor(std::log10l(abs_value)));
+  }
+};
 } // namespace detail
 
 namespace detail {
@@ -682,7 +775,6 @@ private:
   char *ptr_;
   char *end_;
 
-
   static constexpr char digits_lower[] = "0123456789abcdefghijklmnopqrstuvwxyz";
   static constexpr char digits_upper[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
   static constexpr char two_digit_table[200] = {
@@ -778,7 +870,6 @@ private:
   void _convert_integer_u(unsigned_type value, int base, bool uppercase) {
     const char *digits = uppercase ? digits_upper : digits_lower;
 
-    // std::cout << "_convert_integer_u" << std::endl;
     char *current = ptr_;
 
     if (base == 10) {
@@ -793,7 +884,6 @@ private:
 
     ptr_ = current;
   }
-
 
   template <typename T> void _convert_float_integer_part(T value) {
     if (value == 0) {
@@ -868,47 +958,46 @@ private:
       return;
     }
 
-    bool negative = value < T{0};
+    // bool negative = value < T{0};
     T abs_value = std::abs(value);
 
-    // === calculate decimalism E to make mantissa ∈ [1.0, 10.0) ===
-    T log10_val;
-    if constexpr (std::is_same_v<T, float>) {
-      log10_val = std::log10f(abs_value);
-    } else if constexpr (std::is_same_v<T, double>) {
-      log10_val = std::log10(abs_value);
-    } else if constexpr (std::is_same_v<T, long double>) {
-      log10_val = std::log10l(abs_value);
-    } else {
-      static_assert(sizeof(T) == 0, "Unsupported floating-point type");
+    // 优化：对于常见范围使用快速近似
+    int exponent = exponent_calculator<T>::calculate(abs_value);
+
+    // 计算尾数
+    T mantissa = value;
+    if (exponent != 0) {
+      // 使用预计算的10的幂次表
+      if (exponent > 0 && exponent <= 18) {
+        mantissa /= static_cast<T>(POW10_TABLE[exponent]);
+      } else if (exponent < 0 && exponent >= -18) {
+        mantissa *= static_cast<T>(POW10_TABLE[-exponent]);
+      } else {
+        // 非常见指数，使用标准方法
+        T power_of_ten = std::pow(T{10}, static_cast<T>(exponent));
+        mantissa /= power_of_ten;
+      }
     }
 
-    // exponent
-    int exponent = static_cast<int>(std::floor(log10_val));
+    // 确保尾数在正确范围内
+    T abs_mantissa = std::abs(mantissa);
+    const T epsilon = std::numeric_limits<T>::epsilon() * 10;
 
-    T frac = log10_val - static_cast<T>(exponent); // ∈ [0, 1)
-
-    // --- safe calculate mantissa ∈ [1, 10) ---
-    T mantissa_abs;
-    if constexpr (std::is_same_v<T, float>) {
-      mantissa_abs = std::powf(T{10}, frac);
-    } else if constexpr (std::is_same_v<T, double>) {
-      mantissa_abs = std::pow(T{10}, frac);
-    } else {
-      mantissa_abs = std::powl(T{10}, frac);
+    if (abs_mantissa >= 10.0 - epsilon) {
+      mantissa /= 10.0;
+      exponent += 1;
+    } else if (abs_mantissa < 1.0 - epsilon && abs_mantissa > epsilon) {
+      mantissa *= 10.0;
+      exponent -= 1;
     }
 
-    T mantissa = negative ? -mantissa_abs : mantissa_abs;
-    // --- format ---
+    // 格式化和输出
     if (precision < 0)
       precision = 6;
-    if (std::abs(exponent) > 100 && precision < 10)
-      precision = 10;
 
-    // std::cout << "precision: " << precision << std::endl;
     _convert_float_as_fixed(mantissa, precision);
 
-    // write exponent part
+    // 写入指数部分
     _write_char(uppercase ? 'E' : 'e');
 
     if (exponent >= 0) {
@@ -918,7 +1007,7 @@ private:
       exponent = -exponent;
     }
 
-    // format exponent（2 digits）
+    // 格式化指数
     if (exponent < 10) {
       _write_char('0');
       _write_char('0' + exponent);
@@ -926,7 +1015,6 @@ private:
       _write_char('0' + (exponent / 10));
       _write_char('0' + (exponent % 10));
     } else {
-      // if exponent over than 100, use convert integer method
       _convert_float_integer_part(static_cast<uint64_t>(exponent));
     }
   }
@@ -946,7 +1034,7 @@ private:
 
   template <typename T> void _convert_float_as_general(T value, int precision) {
     if (precision < 0) {
-      precision = 6; // 默认精度
+      precision = 6; // Default precision
     }
 
     if (value == 0.0) {
@@ -955,15 +1043,16 @@ private:
       return;
     }
 
-    // 计算指数
+    // Calculate exponent
     int exponent = 0;
     if (value != 0.0) {
-      exponent = static_cast<int>(std::floor(std::log10(std::abs(value))));
+      // exponent = static_cast<int>(std::floor(std::log10(std::abs(value))));
+      exponent = exponent_calculator<T>::calculate(std::abs(value));
     }
 
-    // 条件：-4 <= exponent < precision
+    // Condition: -4 <= exponent < precision
     if (exponent >= -4 && exponent < precision) {
-      // 分发到固定格式任务
+      // Dispatch to fixed format
       int integer_digits = (exponent >= 0) ? exponent + 1 : 0;
       int fixed_precision = precision - integer_digits;
       if (fixed_precision < 0) {
@@ -973,7 +1062,7 @@ private:
       _convert_float_as_fixed(value, fixed_precision);
       _remove_float_trailing_zeros();
     } else {
-      // 分发到科学记数法任务
+      // Dispatch to scientific notation
       _convert_float_as_scientific(value, precision - 1, false);
       _remove_float_trailing_zeros();
     }
@@ -1032,7 +1121,7 @@ private:
     }
 
     // Clamp precision
-    if(precision > MAX_FLOAT_PRECISION){
+    if (precision > MAX_FLOAT_PRECISION) {
       precision = MAX_FLOAT_PRECISION;
     }
     // Dispatch method
@@ -1055,7 +1144,7 @@ private:
  * @brief test first char and offset pointer
  */
 
-inline int get_sign_for_sstov(const char* &first){
+inline int get_sign_for_sstov(const char *&first) {
   int sign = 1;
   if (*first == '-') {
     sign = -1;
@@ -1068,24 +1157,24 @@ inline int get_sign_for_sstov(const char* &first){
 }
 
 template <typename integer_type, typename unsigned_type>
-inline std::errc check_integer_overflow(int str_sign,
-                                           unsigned_type pre_result,
-                                           integer_type &value_out) {
-  // std::cout << "\t[DEBUG] pre_result: " << pre_result << std::endl;
+inline std::errc check_integer_overflow(int str_sign, unsigned_type pre_result,
+                                        integer_type &value_out) {
   if constexpr (detail::is_signed<integer_type>::value) { // signed type
     if (str_sign == -1) {
       value_out = -integer_type(pre_result);
-      if (pre_result > unsigned_type(detail::numeric_limits<integer_type>::max()) + 1) {
+      if (pre_result >
+          unsigned_type(detail::numeric_limits<integer_type>::max()) + 1) {
         return std::errc::result_out_of_range;
       }
     } else {
       value_out = integer_type(pre_result);
-      if (pre_result > unsigned_type(detail::numeric_limits<integer_type>::max())) {
+      if (pre_result >
+          unsigned_type(detail::numeric_limits<integer_type>::max())) {
         return std::errc::result_out_of_range;
       }
     }
   } else {
-    if(str_sign == -1){
+    if (str_sign == -1) {
       value_out = integer_type(pre_result);
       return std::errc::invalid_argument;
     }
@@ -1096,31 +1185,29 @@ inline std::errc check_integer_overflow(int str_sign,
 
 } // namespace detail
 
-
 /**
  * @brief this tool is a clone as std::from_chars(...)
  * @note when errcode genrated, value should set zero
  */
 template <typename integer_type>
-inline sstov_result sstoi(const char *first, const char *last, integer_type &value,
-                   int base = 10) noexcept {
+inline sstov_result sstoi(const char *first, const char *last,
+                          integer_type &value, int base = 10) noexcept {
   static_assert(detail::supports_integer_v<integer_type>,
                 "Only integral types supported");
-
 
   if (last <= first || base < 2 || base > 36) {
     value = 0;
     return {first, std::errc::invalid_argument};
   }
 
- int pre_sign = detail::get_sign_for_sstov(first);
+  int pre_sign = detail::get_sign_for_sstov(first);
 
   using unsigned_type = detail::make_unsigned_t<integer_type>;
   unsigned_type pre_result = 0;
 
   sstov_result status;
 
-  if(base == 10){
+  if (base == 10) {
     status = detail::stoi_base10_u(first, last, pre_result);
   } else if ((base & (base - 1)) == 0) {
     if (base == 2) {
@@ -1131,11 +1218,12 @@ inline sstov_result sstoi(const char *first, const char *last, integer_type &val
       status = detail::stoi_pow2_base_u<false>(first, last, pre_result, base);
     }
   } else {
-      status = detail::stoi_alnum_u(first, last, pre_result, base);
+    status = detail::stoi_alnum_u(first, last, pre_result, base);
   }
-  if(status.ec == std::errc{}){
-    return {status.ptr, detail::check_integer_overflow(pre_sign, pre_result, value)};
-  }else{
+  if (status.ec == std::errc{}) {
+    return {status.ptr,
+            detail::check_integer_overflow(pre_sign, pre_result, value)};
+  } else {
     value = integer_type(pre_result);
   }
   return status;
@@ -1148,26 +1236,28 @@ inline sstov_result sstoi(const char *first, size_t len, integer_type &value,
 }
 
 template <typename integer_type>
-inline sstov_result sstoi_base10(const char *first, const char *last, integer_type &value){
+inline sstov_result sstoi_base10(const char *first, const char *last,
+                                 integer_type &value) {
   if (last <= first) {
     value = 0;
     return {first, std::errc::invalid_argument};
   }
   int pre_sign = detail::get_sign_for_sstov(first);
-  // std::cout << "pre sign: " << pre_sign << std::endl;
   using unsigned_type = detail::make_unsigned_t<integer_type>;
   unsigned_type pre_result = 0;
   sstov_result status = detail::stoi_base10_u(first, last, pre_result);
-  if(status.ec == std::errc{}){
-    return {status.ptr, detail::check_integer_overflow(pre_sign, pre_result, value)};
-  }else{
+  if (status.ec == std::errc{}) {
+    return {status.ptr,
+            detail::check_integer_overflow(pre_sign, pre_result, value)};
+  } else {
     value = integer_type(pre_result);
   }
   return status;
 }
 
 template <typename integer_type>
-inline sstov_result sstoi_base10(const char *first, size_t len, integer_type &value){
+inline sstov_result sstoi_base10(const char *first, size_t len,
+                                 integer_type &value) {
   return sstoi_base10(first, first + len, value);
 }
 
@@ -1176,18 +1266,18 @@ inline toy::sstov_result sstof(const char *first, const char *end,
                                float_type &value) {
   int sign = toy::detail::get_sign_for_sstov(first);
 
-  union starts_pack{
+  union starts_pack {
     char ch[4];
     uint32_t v;
   };
 
-  if(end - first >= 3){
+  if (end - first >= 3) {
     starts_pack starts;
-    starts.v = *((uint32_t*)(first));
+    starts.v = *((uint32_t *)(first));
     starts.ch[3] = '\0';
 
-    constexpr starts_pack inf_low   = {{"inf"}};
-    constexpr starts_pack nan_low   = {{"nan"}};
+    constexpr starts_pack inf_low = {{"inf"}};
+    constexpr starts_pack nan_low = {{"nan"}};
     constexpr starts_pack inf_upper = {{"INF"}};
     constexpr starts_pack nan_upper = {{"NAN"}};
 
@@ -1201,11 +1291,10 @@ inline toy::sstov_result sstof(const char *first, const char *end,
     // constexpr starts_pack inf_upper = {{'I', 'N', 'F', '\0'}};
     // constexpr starts_pack nan_upper = {{'N', 'A', 'N', '\0'}};
 
-    if(starts.v == inf_low.v || starts.v == inf_upper.v){
-      value = std::numeric_limits<float_type>::infinity()*sign;
+    if (starts.v == inf_low.v || starts.v == inf_upper.v) {
+      value = std::numeric_limits<float_type>::infinity() * sign;
       return {first + 3, std::errc{}};
-    }
-    else if(starts.v == nan_low.v || starts.v == nan_upper.v){
+    } else if (starts.v == nan_low.v || starts.v == nan_upper.v) {
       value = std::numeric_limits<float_type>::quiet_NaN();
       return {first + 3, std::errc{}};
     }
@@ -1238,7 +1327,6 @@ inline toy::sstov_result sstof(const char *first, const char *end,
 
     value += float_type(frac_part) /
              toy::detail::to_chars_helper::get_pow10(frac_digits_count);
-
   }
 
   const char *exp_p = res.ptr;
@@ -1248,12 +1336,13 @@ inline toy::sstov_result sstof(const char *first, const char *end,
       ++exp_p;
       unsigned exponent = 0;
       unsigned remaining = end - exp_p;
-      if(remaining > 17) remaining = 17;
+      if (remaining > 17)
+        remaining = 17;
       int sign_e = toy::detail::get_sign_for_sstov(exp_p);
       res = toy::detail::stoi_base10_u(exp_p, exp_p + remaining, exponent);
-      if(sign_e < 0){
+      if (sign_e < 0) {
         value /= toy::detail::to_chars_helper::get_pow10(exponent);
-      }else{
+      } else {
         value *= toy::detail::to_chars_helper::get_pow10(exponent);
       }
       break;
