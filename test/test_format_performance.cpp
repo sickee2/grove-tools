@@ -9,6 +9,7 @@
 #include <sstream>   // 添加 ostringstream
 #include <gr/performance_timer.hh>
 #include <iostream>
+#include <iomanip>
 #include <fmt/format.h>
 void test_basic_formatting_performance() {
   gr::console::write("=== Basic Formatting Performance Test ===\n");
