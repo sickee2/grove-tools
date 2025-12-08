@@ -568,6 +568,46 @@ int codepoint::display_width() const {
 }
 
 
+template<unsigned bytes>
+bool check_u8_flow_bytest(const char*);
+
+template<>
+bool check_u8_flow_bytest<2>(const char* p){
+  return ((p[1]&0xC0) == 0x80) ? true : false;
+}
+
+template<>
+bool check_u8_flow_bytest<3>(const char* p){
+  uint16_t value = *reinterpret_cast<const uint16_t*>(p + 1);
+  return (value & 0xC0C0) == 0x8080 ? true : false;
+}
+
+template<>
+bool check_u8_flow_bytest<4>(const char* c){
+  constexpr bool endian = gr::is_little_endian();
+  constexpr uint32_t mask = endian? 0xC0C0C0F0 : 0xF0C0C0C0;
+  constexpr uint32_t v =    endian? 0x808080F0 : 0xF0808080;
+  uint32_t value = *(uint32_t*)(c);
+  return (value & mask) == v ? true : false;
+}
+
+unsigned check_u8_header(const char* p){
+  unsigned char c = static_cast<unsigned char>(*p);
+  if(c == 0) return 0;
+  if((c & 0xF0) == 0xF0){
+    if(check_u8_flow_bytest<4>(p))
+      return 4;
+  }else if((c & 0xE0) == 0xE0){
+    if(check_u8_flow_bytest<3>(p))
+      return 3;
+  }else if((c & 0xC0) == 0xC0){
+    if(check_u8_flow_bytest<2>(p))
+      return 2;
+  }else{
+    return 1;
+  }
+  return 0;
+}
 /// sequence<char> .....
 /**
  * @brief Validate UTF-8 sequence
@@ -591,27 +631,11 @@ sequence_info sequence<char>::check(const char *current, const char *end,
   }
 
   /// Determine the sequence length
-  size_t len = 1;
-  if ((c & 0xE0) == 0xC0)
-    len = 2;
-  else if ((c & 0xF0) == 0xE0)
-    len = 3;
-  else if ((c & 0xF8) == 0xF0)
-    len = 4;
-  else
-    return {1, sequence_status::invalid_starbyte};
-
+  size_t len = check_u8_header(current);
+  if(len < 2) return {len, sequence_status::invalid_continuation};
   /// Check the integrity of the sequence
-  // 修复边界检查
   if (current + len > end)
     return {0, sequence_status::truncated};
-
-  /// Check the validity of subsequent bytes
-  for (size_t i = 1; i < len; ++i) {
-    if ((p[i] & 0xC0) != 0x80) {
-      return {i, sequence_status::invalid_continuation};
-    }
-  }
 
   return {len, sequence_status::valid};
 }
