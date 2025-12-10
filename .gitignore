@@ -1,7 +1,8 @@
 # Xmake cache
 .cache/
 .xmake/
-.vscode
+.vscode/
+.git/
 build/
 clangd/
 
