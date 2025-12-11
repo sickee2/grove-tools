@@ -110,7 +110,7 @@ template <> struct make_unsigned<__uint128_t> {
 template <typename T> using make_unsigned_t = make_unsigned<T>::type;
 
 template <typename T> struct supports_integer {
-  static const bool value = std::is_integral_v<T> ||
+  static constexpr bool value = std::is_integral_v<T> ||
                             std::is_same_v<T, __int128_t> ||
                             std::is_same_v<T, __uint128_t>;
 };
@@ -171,13 +171,13 @@ template <> struct fp_traits<float> {
   using store_type = uint32_t;
   using up_store_type = uint64_t; // Upper type for intermediate calculations
   using promote_type = double;
-  static constexpr int mantissa_bits = 23;
-  static constexpr int exponent_bits = 8;
-  static constexpr int exponent_bias = 127;
-  static constexpr uint32_t mantissa_mask = 0x7FFFFF;
-  static constexpr uint32_t implicit_bit = 0x800000;
-  static constexpr int max_decimal_digits = 8;
-  static constexpr int max_shift_bits = 63;
+  constexpr static int mantissa_bits = 23;
+  constexpr static int exponent_bits = 8;
+  constexpr static int exponent_bias = 127;
+  constexpr static uint32_t mantissa_mask = 0x7FFFFF;
+  constexpr static uint32_t implicit_bit = 0x800000;
+  constexpr static int max_decimal_digits = 8;
+  constexpr static int max_shift_bits = 63;
 };
 
 template <> struct fp_traits<double> {
@@ -185,13 +185,13 @@ template <> struct fp_traits<double> {
   using store_type = uint64_t;
   using up_store_type = __uint128_t; // Upper type for intermediate calculations
   using promote_type = long double;
-  static constexpr int mantissa_bits = 52;
-  static constexpr int exponent_bits = 11;
-  static constexpr int exponent_bias = 1023;
-  static constexpr uint64_t mantissa_mask = 0xFFFFFFFFFFFFFULL;
-  static constexpr uint64_t implicit_bit = 0x10000000000000ULL;
-  static constexpr int max_decimal_digits = 17;
-  static constexpr int max_shift_bits = 127;
+  constexpr static int mantissa_bits = 52;
+  constexpr static int exponent_bits = 11;
+  constexpr static int exponent_bias = 1023;
+  constexpr static uint64_t mantissa_mask = 0xFFFFFFFFFFFFFULL;
+  constexpr static uint64_t implicit_bit = 0x10000000000000ULL;
+  constexpr static int max_decimal_digits = 17;
+  constexpr static int max_shift_bits = 127;
 };
 
 // #ifdef __SIZEOF_FLOAT128__
@@ -201,15 +201,13 @@ template <> struct fp_traits<long double> {
   using store_type = __uint128_t;
   using up_store_type = __uint128_t; // Upper type for intermediate calculations
   using promote_type = long double;
-  static constexpr int mantissa_bits = 112;
-  static constexpr int exponent_bits = 15;
-  static constexpr int exponent_bias = 16383;
-  static constexpr __uint128_t mantissa_mask =
-      (static_cast<__uint128_t>(1) << 112) - 1;
-  static constexpr __uint128_t implicit_bit = static_cast<__uint128_t>(1)
-                                              << 112;
-  static constexpr int max_decimal_digits = 34;
-  static constexpr int max_shift_bits = 255;
+  constexpr static int mantissa_bits = 112;
+  constexpr static int exponent_bits = 15;
+  constexpr static int exponent_bias = 16383;
+  constexpr static __uint128_t mantissa_mask = (static_cast<__uint128_t>(1) << 112) - 1;
+  constexpr static __uint128_t implicit_bit = static_cast<__uint128_t>(1) << 112;
+  constexpr static int max_decimal_digits = 34;
+  constexpr static int max_shift_bits = 255;
 };
 // #endif
 
@@ -288,7 +286,7 @@ constexpr int char_to_digit(char c) {
 #elif CHAR_TO_DIGIT_METHOD == 1
   constexpr unsigned TABLE_N = 75;
   using table_type = std::array<int8_t, TABLE_N>;
-  static constexpr auto make_ch_table = [] -> table_type {
+  constexpr static auto make_ch_table = [] -> table_type {
     table_type table{};
     int8_t i = 0;
     std::fill_n(table.data(), TABLE_N, -1);
@@ -312,7 +310,7 @@ constexpr int char_to_digit(char c) {
   return table[ch];
 #else
   /// use table
-  static constexpr auto make_c2d_table = [] -> std::array<int8_t, 256> {
+  constexpr static auto make_c2d_table = [] -> std::array<int8_t, 256> {
     std::array<int8_t, 256> table{};
     int8_t i = 0;
     std::fill_n(table.data(), 256, -1);
@@ -575,7 +573,7 @@ inline auto _split_float_u<long double>(long double value, int precision)
 template <typename T> struct exponent_calculator;
 
 template <> struct exponent_calculator<float> {
-  static int calculate(float abs_value) {
+  constexpr static int calculate(float abs_value) {
     // Quick check for common range
     if (abs_value >= 1e-4f && abs_value <= 1e6f) {
       // Fast estimation using bit manipulation
@@ -588,7 +586,7 @@ template <> struct exponent_calculator<float> {
       int exponent = (e * 30103 + 50000) / 100000; // 四舍五入
 
       // Quick adjustment
-      static constexpr float COMMON_POW10[] = {
+      constexpr static float COMMON_POW10[] = {
           1e-4f, 1e-3f, 1e-2f, 1e-1f, 1e0f, 1e1f, 1e2f, 1e3f, 1e4f, 1e5f, 1e6f};
 
       // Binary search adjustment
@@ -611,7 +609,7 @@ template <> struct exponent_calculator<float> {
 };
 
 template <> struct exponent_calculator<double> {
-  static int calculate(double abs_value) {
+  constexpr static int calculate(double abs_value) {
     // Quick check for common range
     if (abs_value >= 1e-4 && abs_value <= 1e6) {
       // Fast estimation using bit manipulation
@@ -623,7 +621,7 @@ template <> struct exponent_calculator<double> {
       int exponent = (e * 301029995 + 500000000) / 1000000000;
 
       // Common range adjustment
-      static constexpr double COMMON_POW10[] = {
+      constexpr static double COMMON_POW10[] = {
           1e-4, 1e-3, 1e-2, 1e-1, 1e0, 1e1, 1e2, 1e3, 1e4, 1e5, 1e6};
 
       int low = 0, high = 10;
@@ -645,7 +643,7 @@ template <> struct exponent_calculator<double> {
 };
 
 template <typename T> struct exponent_calculator {
-  static int calculate(T abs_value) {
+  constexpr static int calculate(T abs_value) {
     // Use standard method
     return static_cast<int>(std::floor(std::log10l(abs_value)));
   }
@@ -1248,13 +1246,13 @@ inline sstov_result sstoi(const char *first, const char *last,
 }
 
 template <typename integer_type>
-inline sstov_result sstoi(const char *first, size_t len, integer_type &value,
+constexpr sstov_result sstoi(const char *first, size_t len, integer_type &value,
                           int base = 10) noexcept {
   return sstoi(first, first + len, value, base);
 }
 
 template <typename integer_type>
-inline sstov_result sstoi_base10(const char *first, const char *last,
+constexpr sstov_result sstoi_base10(const char *first, const char *last,
                                  integer_type &value) {
   if (last <= first) {
     value = 0;
@@ -1274,7 +1272,7 @@ inline sstov_result sstoi_base10(const char *first, const char *last,
 }
 
 template <typename integer_type>
-inline sstov_result sstoi_base10(const char *first, size_t len,
+constexpr sstov_result sstoi_base10(const char *first, size_t len,
                                  integer_type &value) {
   return sstoi_base10(first, first + len, value);
 }

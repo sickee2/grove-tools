@@ -25,7 +25,7 @@ public:
         m_codepoint(0), /*m_seq_len(0), m_status(uc::sequence_status::valid),*/ m_failed(fb),
         m_endian(endian) {
 
-    auto info = uc::sequence<char_type>::check(m_current, m_end, m_endian);
+    auto info = uc::sequence::check(m_current, m_end, m_endian);
     m_seq_len = info.length;
     m_status = info.status;
     // gr::console::logl("constuct: len: {} status: {}", info.length, uc::get_status_info(m_status));
@@ -46,7 +46,7 @@ public:
 
   uc::codepoint& operator*() const {
     if(m_codepoint == 0){
-      m_codepoint = uc::sequence<char_type>::decode(m_current, m_seq_len, m_status);
+      m_codepoint = uc::sequence::decode(m_current, m_seq_len, m_status);
     }
     return m_codepoint;
   }
@@ -66,7 +66,7 @@ private:
 
     // search next sequence
     while (m_current < m_end && m_status != uc::sequence_status::valid) {
-      auto res = uc::sequence<char_type>::check(m_current, m_end, m_endian);
+      auto res = uc::sequence::check(m_current, m_end, m_endian);
 
       m_seq_len = res.length;
       m_status = res.status;

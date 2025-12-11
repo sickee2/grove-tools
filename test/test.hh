@@ -45,7 +45,7 @@ inline void test_all(){
   // test_utrim();
   // test_upper_lower();
   // test_utf_string();
-  // test_utf_iter_performance();
+  test_utf_iter_performance();
   // test_from_chars();
   // test_from_chars_edgecases();
   // console::writeln("{} {}", 1, 2);

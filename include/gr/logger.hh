@@ -6,9 +6,10 @@
  * @brief High-performance, extensible logging framework with multiple sinks
  * @ingroup utilities
  *
- * Provides a comprehensive logging system with support for multiple output sinks,
- * log levels, colored console output, file rotation, and compile-time optimization.
- * Designed for high-performance applications requiring flexible and efficient logging.
+ * Provides a comprehensive logging system with support for multiple output
+ * sinks, log levels, colored console output, file rotation, and compile-time
+ * optimization. Designed for high-performance applications requiring flexible
+ * and efficient logging.
  *
  * ## Core Features
  * - **Multiple Log Levels**: TRACE, DEBUG, INFO, WARN, ERROR, FATAL
@@ -17,7 +18,8 @@
  * - **Color Output**: ANSI color-coded console output with configurable colors
  * - **File Rotation**: Size-based log file rotation with backup management
  * - **Compile-time Optimization**: Conditional compilation based on log levels
- * - **Named Loggers**: Multiple named logger instances with independent configuration
+ * - **Named Loggers**: Multiple named logger instances with independent
+ * configuration
  *
  * ## Key Components
  *
@@ -52,7 +54,8 @@
  *
  * ### Compile-time Optimization
  * Log statements are completely eliminated at compile-time when the configured
- * log level is higher than the statement level, providing zero runtime overhead.
+ * log level is higher than the statement level, providing zero runtime
+ * overhead.
  *
  * ## Performance Characteristics
  *
@@ -80,7 +83,8 @@
  * ```cpp
  * logger->add_console_sink(true);  // Console with colors
  * logger->add_file_sink("app.log"); // File output
- * logger->add_rotating_file_sink("rotating.log", 10*1024*1024, 5); // 10MB rotation
+ * logger->add_rotating_file_sink("rotating.log", 10*1024*1024, 5); // 10MB
+ * rotation
  * ```
  *
  * ### Global Convenience Functions
@@ -190,8 +194,8 @@
 #pragma once
 
 #include <gr/config.hh>
-#include <gr/format.hh>
 #include <gr/console.hh>
+#include <gr/format.hh>
 #include <gr/string.hh>
 #include <iostream>
 #include <memory>
@@ -408,7 +412,7 @@ private:
   std::string base_filename_;
   size_t max_size_;
   int max_files_;
-  FILE* file_;
+  FILE *file_;
   std::mutex mutex_;
   size_t current_size_;
 
@@ -427,7 +431,7 @@ private:
         std::string old_name = base_filename_ + "." + std::to_string(i);
         std::string new_name = base_filename_ + "." + std::to_string(i + 1);
 
-        FILE* test_file = std::fopen(old_name.c_str(), "r");
+        FILE *test_file = std::fopen(old_name.c_str(), "r");
         if (test_file) {
           std::fclose(test_file);
           std::rename(old_name.c_str(), new_name.c_str());
@@ -437,7 +441,7 @@ private:
       // Rename current file
       std::string first_backup = base_filename_ + ".1";
 
-      FILE* current_file = std::fopen(base_filename_.c_str(), "r");
+      FILE *current_file = std::fopen(base_filename_.c_str(), "r");
       if (current_file) {
         std::fclose(current_file);
         std::rename(base_filename_.c_str(), first_backup.c_str());
@@ -494,7 +498,6 @@ public:
   }
 };
 
-
 /**
  * @brief Main logger class with multiple sink support
  */
@@ -504,7 +507,7 @@ private:
   std::vector<std::shared_ptr<sink>> sinks_;
   std::mutex mutex_;
   str::u8 name_;
-  bool has_console_sink_ = false;  // Track console sink state
+  bool has_console_sink_ = false; // Track console sink state
 
 public:
   /**
@@ -531,7 +534,8 @@ public:
    */
   void add_sink(std::shared_ptr<sink> sink_ptr) {
     std::lock_guard<std::mutex> lock(mutex_);
-    if (auto console_sink_ptr = std::dynamic_pointer_cast<console_sink>(sink_ptr)) {
+    if (auto console_sink_ptr =
+            std::dynamic_pointer_cast<console_sink>(sink_ptr)) {
       if (has_console_sink_) {
         // Console sink already exists, skip adding
         return;
@@ -576,16 +580,14 @@ public:
   void clear_sinks() {
     std::lock_guard<std::mutex> lock(mutex_);
     sinks_.clear();
-    has_console_sink_ = false;  // Reset state
+    has_console_sink_ = false; // Reset state
   }
 
   /**
    * @brief Check if console sink exists
    * @return true if console sink is present
    */
-  bool has_console_sink() const {
-    return has_console_sink_;
-  }
+  bool has_console_sink() const { return has_console_sink_; }
 
   /**
    * @brief Remove console sink
@@ -598,12 +600,12 @@ public:
 
     // Remove all console sinks
     sinks_.erase(
-      std::remove_if(sinks_.begin(), sinks_.end(),
-        [](const std::shared_ptr<sink>& s) {
-          return std::dynamic_pointer_cast<console_sink>(s) != nullptr;
-        }),
-      sinks_.end()
-    );
+        std::remove_if(sinks_.begin(), sinks_.end(),
+                       [](const std::shared_ptr<sink> &s) {
+                         return std::dynamic_pointer_cast<console_sink>(s) !=
+                                nullptr;
+                       }),
+        sinks_.end());
     has_console_sink_ = false;
   }
 
@@ -613,8 +615,9 @@ public:
    */
   void set_console_colors_enabled(bool enabled) {
     std::lock_guard<std::mutex> lock(mutex_);
-    for (const auto& sink_ptr : sinks_) {
-      if (auto console_sink_ptr = std::dynamic_pointer_cast<console_sink>(sink_ptr)) {
+    for (const auto &sink_ptr : sinks_) {
+      if (auto console_sink_ptr =
+              std::dynamic_pointer_cast<console_sink>(sink_ptr)) {
         console_sink_ptr->set_colors_enabled(enabled);
       }
     }
@@ -652,7 +655,8 @@ public:
   /**
    * @brief Log trace level message
    */
-  template <typename... Args> void trace(toy::fmt_string<Args...> format, Args &&...args) {
+  template <typename... Args>
+  void trace(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 0) {
       log(level::trace, format, std::forward<Args>(args)...);
     }
@@ -661,7 +665,8 @@ public:
   /**
    * @brief Log debug level message
    */
-  template <typename... Args> void debug(toy::fmt_string<Args...> format, Args &&...args) {
+  template <typename... Args>
+  void debug(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 1) {
       log(level::debug, format, std::forward<Args>(args)...);
     }
@@ -670,7 +675,8 @@ public:
   /**
    * @brief Log info level message
    */
-  template <typename... Args> void info(toy::fmt_string<Args...> format, Args &&...args) {
+  template <typename... Args>
+  void info(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 2) {
       log(level::info, format, std::forward<Args>(args)...);
     }
@@ -679,7 +685,8 @@ public:
   /**
    * @brief Log warn level message
    */
-  template <typename... Args> void warn(toy::fmt_string<Args...> format, Args &&...args) {
+  template <typename... Args>
+  void warn(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 3) {
       log(level::warn, format, std::forward<Args>(args)...);
     }
@@ -688,7 +695,8 @@ public:
   /**
    * @brief Log error level message
    */
-  template <typename... Args> void error(toy::fmt_string<Args...> format, Args &&...args) {
+  template <typename... Args>
+  void error(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 4) {
       log(level::error, format, std::forward<Args>(args)...);
     }
@@ -697,7 +705,8 @@ public:
   /**
    * @brief Log fatal level message
    */
-  template <typename... Args> void fatal(toy::fmt_string<Args...> format, Args &&...args) {
+  template <typename... Args>
+  void fatal(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 5) {
       log(level::fatal, format, std::forward<Args>(args)...);
     }
@@ -734,8 +743,7 @@ private:
   };
 
   static inline std::unordered_map<str::u8, std::shared_ptr<Logger>, u8_hash,
-                                   u8_equal>
-      loggers_;
+                                   u8_equal> loggers_;
   static inline std::mutex mutex_;
   static inline std::shared_ptr<Logger> default_logger_ =
       std::make_shared<Logger>();
@@ -779,31 +787,37 @@ public:
 };
 
 // Logging macros with file and line information
-#define GR_LOG_TRACE(logger, format, ...) \
-    (logger)->trace("[{}:{}] " format, __FILE_NAME__, __LINE__, ##__VA_ARGS__)
+#define GR_LOG_TRACE(logger, format, ...)                                      \
+  (logger)->trace("[{}:{}] " format, __FILE_NAME__, __LINE__, ##__VA_ARGS__)
 
-#define GR_LOG_DEBUG(logger, format, ...) \
-    (logger)->debug("[{}:{}] " format, __FILE_NAME__, __LINE__, ##__VA_ARGS__)
+#define GR_LOG_DEBUG(logger, format, ...)                                      \
+  (logger)->debug("[{}:{}] " format, __FILE_NAME__, __LINE__, ##__VA_ARGS__)
 
-#define GR_LOG_INFO(logger, format, ...) \
-    (logger)->info("[{}:{}] " format, __FILE_NAME__, __LINE__, ##__VA_ARGS__)
+#define GR_LOG_INFO(logger, format, ...)                                       \
+  (logger)->info("[{}:{}] " format, __FILE_NAME__, __LINE__, ##__VA_ARGS__)
 
-#define GR_LOG_WARN(logger, format, ...) \
-    (logger)->warn("[{}:{}] " format, __FILE_NAME__, __LINE__, ##__VA_ARGS__)
+#define GR_LOG_WARN(logger, format, ...)                                       \
+  (logger)->warn("[{}:{}] " format, __FILE_NAME__, __LINE__, ##__VA_ARGS__)
 
-#define GR_LOG_ERROR(logger, format, ...) \
-    (logger)->error("[{}:{}] " format, __FILE_NAME__, __LINE__, ##__VA_ARGS__)
+#define GR_LOG_ERROR(logger, format, ...)                                      \
+  (logger)->error("[{}:{}] " format, __FILE_NAME__, __LINE__, ##__VA_ARGS__)
 
-#define GR_LOG_FATAL(logger, format, ...) \
-    (logger)->fatal("[{}:{}] " format, __FILE_NAME__, __LINE__, ##__VA_ARGS__)
+#define GR_LOG_FATAL(logger, format, ...)                                      \
+  (logger)->fatal("[{}:{}] " format, __FILE_NAME__, __LINE__, ##__VA_ARGS__)
 
 // Global convenience macros
-#define GR_TRACE(format, ...) GR_LOG_TRACE(gr::log::get_default_logger(), format, ##__VA_ARGS__)
-#define GR_DEBUG(format, ...) GR_LOG_DEBUG(gr::log::get_default_logger(), format, ##__VA_ARGS__)
-#define GR_INFO(format, ...)  GR_LOG_INFO(gr::log::get_default_logger(), format, ##__VA_ARGS__)
-#define GR_WARN(format, ...)  GR_LOG_WARN(gr::log::get_default_logger(), format, ##__VA_ARGS__)
-#define GR_ERROR(format, ...) GR_LOG_ERROR(gr::log::get_default_logger(), format, ##__VA_ARGS__)
-#define GR_FATAL(format, ...) GR_LOG_FATAL(gr::log::get_default_logger(), format, ##__VA_ARGS__)
+#define GR_TRACE(format, ...)                                                  \
+  GR_LOG_TRACE(gr::log::get_default_logger(), format, ##__VA_ARGS__)
+#define GR_DEBUG(format, ...)                                                  \
+  GR_LOG_DEBUG(gr::log::get_default_logger(), format, ##__VA_ARGS__)
+#define GR_INFO(format, ...)                                                   \
+  GR_LOG_INFO(gr::log::get_default_logger(), format, ##__VA_ARGS__)
+#define GR_WARN(format, ...)                                                   \
+  GR_LOG_WARN(gr::log::get_default_logger(), format, ##__VA_ARGS__)
+#define GR_ERROR(format, ...)                                                  \
+  GR_LOG_ERROR(gr::log::get_default_logger(), format, ##__VA_ARGS__)
+#define GR_FATAL(format, ...)                                                  \
+  GR_LOG_FATAL(gr::log::get_default_logger(), format, ##__VA_ARGS__)
 
 // Global logger instance
 inline std::shared_ptr<Logger> get_default_logger() {
@@ -815,8 +829,7 @@ inline std::shared_ptr<Logger> get_default_logger() {
  * @param name Logger name
  * @param enable_colors Whether to enable console colors
  */
-inline void init_logger(str::u8v name = "default",
-                                bool enable_colors = true) {
+inline void init_logger(str::u8v name = "default", bool enable_colors = true) {
   auto logger = logger_manager::get_logger(name);
   logger_manager::set_default_logger(logger);
 

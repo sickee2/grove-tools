@@ -219,7 +219,7 @@ u8 to_utf8(u16v utf16, uc::on_failed fb, gr::endian endian) {
   const char16_t *end = current + utf16.size();
 
   while (current < end) {
-    auto seq_info = uc::sequence<char16_t>::check(current, end, endian);
+    auto seq_info = uc::sequence::check(current, end, endian);
 
     if (seq_info.status != uc::sequence_status::valid) {
       switch (fb) {
@@ -240,7 +240,7 @@ u8 to_utf8(u16v utf16, uc::on_failed fb, gr::endian endian) {
 #endif
       }
     }
-    auto cp = uc::sequence<char16_t>::decode(current, seq_info.length,
+    auto cp = uc::sequence::decode(current, seq_info.length,
                                              seq_info.status, endian);
 
     auto chunk = cp.chunk_u8();
@@ -258,8 +258,7 @@ u8 to_utf8(u32v utf32, uc::on_failed fb, gr::endian endian) {
   const char32_t *current = utf32.data();
   const char32_t *end = current + utf32.size();
   while (current < end) {
-    auto cp = uc::sequence<char32_t>::decode(
-        current, 1, uc::sequence_status::valid, endian);
+    auto cp = uc::sequence::decode(current, 1, uc::sequence_status::valid, endian);
 
     auto chunk = cp.chunk_u8();
     result.append(chunk.buf, chunk.size());
@@ -277,7 +276,7 @@ u16 to_utf16(u8v utf8, uc::on_failed fb, gr::endian endian) {
   const char *end = current + utf8.size();
 
   while (current < end) {
-    auto seq_info = uc::sequence<char>::check(current, end, endian);
+    auto seq_info = uc::sequence::check(current, end, endian);
 
     if (seq_info.status != uc::sequence_status::valid) {
       switch (fb) {
@@ -299,7 +298,7 @@ u16 to_utf16(u8v utf8, uc::on_failed fb, gr::endian endian) {
       }
     }
 
-    auto cp = uc::sequence<char>::decode(current, seq_info.length,
+    auto cp = uc::sequence::decode(current, seq_info.length,
                                          seq_info.status, endian);
 
     auto chunk = cp.chunk_u16();
@@ -319,7 +318,7 @@ u16 to_utf16(u32v utf32, uc::on_failed fb, gr::endian endian) {
   const char32_t *end = current + utf32.size();
 
   while (current < end) {
-    auto seq_info = uc::sequence<char32_t>::check(current, end, endian);
+    auto seq_info = uc::sequence::check(current, end, endian);
 
     if (seq_info.status != uc::sequence_status::valid) {
       switch (fb) {
@@ -341,7 +340,7 @@ u16 to_utf16(u32v utf32, uc::on_failed fb, gr::endian endian) {
       }
     }
 
-    auto cp = uc::sequence<char32_t>::decode(current, seq_info.length,
+    auto cp = uc::sequence::decode(current, seq_info.length,
                                              seq_info.status, endian);
 
     auto chunk = cp.chunk_u16();
@@ -361,7 +360,7 @@ u32 to_utf32(u8v utf8, uc::on_failed fb, gr::endian endian) {
   const char *end = current + utf8.size();
 
   while (current < end) {
-    auto seq_info = uc::sequence<char>::check(current, end, endian);
+    auto seq_info = uc::sequence::check(current, end, endian);
 
     if (seq_info.status != uc::sequence_status::valid) {
       switch (fb) {
@@ -383,7 +382,7 @@ u32 to_utf32(u8v utf8, uc::on_failed fb, gr::endian endian) {
       }
     }
 
-    auto cp = uc::sequence<char>::decode(current, seq_info.length,
+    auto cp = uc::sequence::decode(current, seq_info.length,
                                          seq_info.status, endian);
 
     result.push_back(cp.value());
@@ -401,7 +400,7 @@ u32 to_utf32(u16v utf16, uc::on_failed fb, gr::endian endian) {
   const char16_t *end = current + utf16.size();
 
   while (current < end) {
-    auto seq_info = uc::sequence<char16_t>::check(current, end, endian);
+    auto seq_info = uc::sequence::check(current, end, endian);
 
     if (seq_info.status != uc::sequence_status::valid) {
       switch (fb) {
@@ -423,7 +422,7 @@ u32 to_utf32(u16v utf16, uc::on_failed fb, gr::endian endian) {
       }
     }
 
-    auto cp = uc::sequence<char16_t>::decode(current, seq_info.length,
+    auto cp = uc::sequence::decode(current, seq_info.length,
                                              seq_info.status, endian);
 
     result.push_back(cp.value());
@@ -818,9 +817,9 @@ size_t utf_view<char_type>::udisplay_width() const {
 
   while (current < end) {
     auto info =
-        uc::sequence<char_type>::check(current, end, gr::endian::native);
+        uc::sequence::check(current, end, gr::endian::native);
     if (info.status == uc::sequence_status::valid) {
-      auto cp = uc::sequence<char_type>::decode(
+      auto cp = uc::sequence::decode(
           current, info.length, info.status, gr::endian::native);
       width += cp.display_width();
       current += info.length;
@@ -1395,9 +1394,9 @@ auto utf_view<char_type>::word_boundaries() const -> std::vector<uint32_t> {
 
     while (current < end) {
       auto seq_info =
-          uc::sequence<char_type>::check(current, end, gr::endian::native);
+          uc::sequence::check(current, end, gr::endian::native);
       if (seq_info.status == uc::sequence_status::valid) {
-        auto cp = uc::sequence<char_type>::decode(
+        auto cp = uc::sequence::decode(
             current, seq_info.length, seq_info.status, gr::endian::native);
         bool current_alpha = cp.is_alphabetic();
         if (current_alpha != in_word) {

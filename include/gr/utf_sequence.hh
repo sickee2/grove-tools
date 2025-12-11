@@ -245,7 +245,9 @@ template <> struct chunk_proxy<char> {
   /**
    * @brief Convet current buffer to std::string_view<T>
    */
-  auto view() const { return std::basic_string_view<char>(buf, this->size()); }
+  auto view() const -> std::basic_string_view<char> {
+    return {buf, size_t(this->size())}; 
+  }
 
   /**
    * @brief make a proxy of replacement buffer
@@ -498,14 +500,9 @@ struct sequence_info {
 };
 
 /**
- * @brief Unicode encoding implementation template (primary template)
+ * @brief UTF specialization implementation
  */
-template <typename CharT, typename = void> struct sequence {};
-
-/**
- * @brief UTF-8 specialization implementation
- */
-template <> struct sequence<char> {
+struct sequence {
   /**
    * @brief Calculate UTF-8 sequence length (SSE accelerated)
    */
@@ -524,16 +521,10 @@ template <> struct sequence<char> {
   /**
    * @brief after check(...), get original sequence from string_view
    */
-  static std::string_view view(const char* pos,
+  static constexpr std::string_view view(const char* pos,
                                sequence_info res) {
     return std::string_view(pos, res.length);
   }
-};
-
-/**
- * @brief UTF-16 specialization implementation
- */
-template <> struct sequence<char16_t> {
   /**
    * @brief Calculate UTF-16 sequence length
    */
@@ -552,16 +543,10 @@ template <> struct sequence<char16_t> {
   /**
    * @brief after check(...), get original sequence from string_view
    */
-  static std::u16string_view view(const char16_t* pos,
+  static constexpr std::u16string_view view(const char16_t* pos,
                                   sequence_info res) {
     return std::u16string_view(pos, res.length);
   }
-};
-
-/**
- * @brief UTF-32 specialization implementation
- */
-template <> struct sequence<char32_t> {
   /**
    * @brief Calculate UTF-32 sequence length
    */
@@ -593,9 +578,10 @@ template <> struct sequence<char32_t> {
   /**
    * @brief after check(...), get original sequence from string_view
    */
-  static std::u32string_view view(std::u32string_view sv, size_t pos,
+  static constexpr std::u32string_view view(std::u32string_view sv, size_t pos,
                                   sequence_info) {
     return sv.substr(pos, 1);
   }
 };
+
 } // namespace gr::uc

@@ -5,8 +5,8 @@
 #include <gr/format.hh>
 #include <string>
 #include <vector>
-#include <cstdio>    // 添加 snprintf
-#include <sstream>   // 添加 ostringstream
+#include <cstdio>
+#include <sstream>
 #include <gr/performance_timer.hh>
 #include <iostream>
 #include <iomanip>
@@ -182,8 +182,7 @@ void test_complex_formatting_performance() {
   {
     PerformanceTimer timer("\ttoy::format");
     for (int i = 0; i < iterations; ++i) {
-      auto result = gr::toy::format("Arguments: {}, {}, {:.2f}, {}", i, i * 2,
-                                    3.14159, "test");
+      auto result = gr::toy::format("Arguments: {}, {}, {:.2f}, {}", i, i * 2, 3.14159, "test");
       (void)result;
     }
   }
@@ -684,8 +683,7 @@ void test_mixed_types_performance() {
   {
     PerformanceTimer timer("\ttoy::format");
     for (int i = 0; i < iterations; ++i) {
-      auto result = gr::toy::format("Data: {:.2f} {} {:#x} {}", 3.14159 + i,
-                                    "text", i, 42.5f);
+      auto result = gr::toy::format("Data: {:.2f} {} {:#x} {:.2f}", 3.14159 + i, "text", int(i), 42.5f);
       (void)result;
     }
   }

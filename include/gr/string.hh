@@ -512,7 +512,7 @@ public:
     const char_type *current = this->data();
     const char_type *end = current + this->size();
     while (current < end) {
-      auto seq_info = uc::sequence<char_type>::check(current, end, endian_);
+      auto seq_info = uc::sequence::check(current, end, endian_);
       if (seq_info.status == uc::sequence_status::valid) {
         n++;
       } else {
@@ -1909,8 +1909,8 @@ void batch_process_utf(utf_view<char_type> utfview, Func &&func,
   const char_type *current = utfview.data();
   const char_type *end = current + utfview.size();
   while (current < end) {
-    auto seq_info = uc::sequence<char_type>::check(current, end, endian);
-    auto cp = uc::sequence<char_type>::decode(current, seq_info.length,
+    auto seq_info = uc::sequence::check(current, end, endian);
+    auto cp = uc::sequence::decode(current, seq_info.length,
                                               seq_info.status, endian);
 
     if (!func(cp, seq_info.status))
@@ -1926,7 +1926,7 @@ void batch_check_utf(utf_view<char_type> utfview, Func &&func,
   const char_type *current = utfview.data();
   const char_type *end = current + utfview.size();
   while (current < end) {
-    auto seq_info = uc::sequence<char_type>::check(current, end, endian);
+    auto seq_info = uc::sequence::check(current, end, endian);
     if (!func(seq_info.status))
       break;
     current += seq_info.length > 0 ? seq_info.length : 1;

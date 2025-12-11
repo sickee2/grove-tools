@@ -178,10 +178,10 @@ codepoint::codepoint(std::string_view sv) : m_value(0xFFFD) { // 默认替换字
     return;
   }
 
-  auto info = sequence<char>::check(sv.data(), sv.data() + sv.size());
+  auto info = sequence::check(sv.data(), sv.data() + sv.size());
   if (info.status == sequence_status::valid) {
     m_value = static_cast<char32_t>(
-        sequence<char>::decode(sv.data(), info.length, info.status));
+        sequence::decode(sv.data(), info.length, info.status));
   }
 }
 
@@ -192,10 +192,10 @@ codepoint::codepoint(std::u16string_view sv) : m_value(0xFFFD) { // 默认替换
   }
 
   // 使用现有的 UTF-16 序列检查机制
-  auto info = sequence<char16_t>::check(sv.data(), sv.data() + sv.size());
+  auto info = sequence::check(sv.data(), sv.data() + sv.size());
   if (info.status == sequence_status::valid) {
     m_value = static_cast<char32_t>(
-        sequence<char16_t>::decode(sv.data(), info.length, info.status));
+        sequence::decode(sv.data(), info.length, info.status));
   }
 }
 
@@ -612,7 +612,7 @@ unsigned check_u8_header(const char* p){
 /**
  * @brief Validate UTF-8 sequence
  */
-sequence_info sequence<char>::check(const char *current, const char *end,
+sequence_info sequence::check(const char *current, const char *end,
                                     gr::endian endian_) {
   (void)(endian_);
   if (current >= end)
@@ -640,7 +640,7 @@ sequence_info sequence<char>::check(const char *current, const char *end,
   return {len, sequence_status::valid};
 }
 
-codepoint sequence<char>::decode(const char *current, uint8_t seq_len,
+codepoint sequence::decode(const char *current, uint8_t seq_len,
                                  sequence_status status, gr::endian endian_) {
   (void)endian_;
 
@@ -665,7 +665,7 @@ codepoint sequence<char>::decode(const char *current, uint8_t seq_len,
 
 /// sequence<char16_t> .....
 
-sequence_info sequence<char16_t>::check(const char16_t *current,
+sequence_info sequence::check(const char16_t *current,
                                         const char16_t *end,
                                         gr::endian endian_) {
   if (current >= end)
@@ -683,7 +683,7 @@ sequence_info sequence<char16_t>::check(const char16_t *current,
   return {1, sequence_status::valid};
 }
 
-codepoint sequence<char16_t>::decode(const char16_t *current, uint8_t seq_len,
+codepoint sequence::decode(const char16_t *current, uint8_t seq_len,
                                      sequence_status status,
                                      gr::endian endian_) {
   if (status != sequence_status::valid)

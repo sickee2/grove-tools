@@ -4,6 +4,7 @@
 #include <iostream>
 #include <random>
 #include <vector>
+#include <iomanip>
 
 using namespace gr;
 using namespace gr::str;
@@ -25,7 +26,7 @@ to_utf8_original(u16v utf16,
   // gr::str::batch_process_utf<char16_t>(utf16, func, endian_ );
   for (auto it = uc::make_iterator(utf16, 0, uc::on_failed::skip, endian_); it;
        ++it) {
-    result.append(it.to_u8().buf);
+    result.append(it->chunk_u8().buf);
   }
   return result;
 }
@@ -47,10 +48,10 @@ std::vector<char16_t> generate_test_data(size_t count) {
   std::mt19937 gen(rd());
 
   // Generate various characters including ASCII, BMP characters, and surrogate pairs
-  std::uniform_int_distribution<char16_t> dist_ascii(0x0020, 0x007F);
-  std::uniform_int_distribution<char16_t> dist_bmp(0x0080, 0xD7FF);
-  std::uniform_int_distribution<char16_t> dist_high_surrogate(0xD800, 0xDBFF);
-  std::uniform_int_distribution<char16_t> dist_low_surrogate(0xDC00, 0xDFFF);
+  std::uniform_int_distribution<uint16_t> dist_ascii(0x0020, 0x007F);
+  std::uniform_int_distribution<uint16_t> dist_bmp(0x0080, 0xD7FF);
+  std::uniform_int_distribution<uint16_t> dist_high_surrogate(0xD800, 0xDBFF);
+  std::uniform_int_distribution<uint16_t> dist_low_surrogate(0xDC00, 0xDFFF);
 
   for (size_t i = 0; i < count; ++i) {
     int type = i % 10;

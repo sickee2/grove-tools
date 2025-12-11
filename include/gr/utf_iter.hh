@@ -74,9 +74,8 @@
  * ### Batch Processing
  * ```cpp
  * size_t valid_count = 0;
- * batch_process_utf(text, [&](gr::uc::codepoint cp, gr::uc::sequence_status status) {
- *     if (status == gr::uc::sequence_status::valid) {
- *         valid_count++;
+ * batch_process_utf(text, [&](gr::uc::codepoint cp, gr::uc::sequence_status
+ * status) { if (status == gr::uc::sequence_status::valid) { valid_count++;
  *     }
  *     return true; // Continue processing
  * });
@@ -169,7 +168,7 @@ public:
       : m_beg(data), m_end(data + size), m_current(data + std::min(pos, size)),
         /*m_seq_len(0), m_status(sequence_status::valid),*/ m_failed(fb),
         m_endian(endian) {
-    auto info = sequence<char_type>::check(m_current, m_end, m_endian);
+    auto info = sequence::check(m_current, m_end, m_endian);
     m_seq_len = info.length;
     m_status = info.status;
     // _seek_valid_forward();
@@ -208,15 +207,15 @@ public:
    * @note Updates internal cache if needed
    */
   reference operator*() const {
-    if(m_code == 0){
-      m_code = sequence<char_type>::decode(m_current, m_seq_len, m_status, m_endian);
+    if (m_code == 0) {
+      m_code = sequence::decode(m_current, m_seq_len, m_status, m_endian);
     }
     return m_code;
   }
 
   const codepoint value() const {
-    if(m_code == 0){
-      m_code = sequence<char_type>::decode(m_current, m_seq_len, m_status, m_endian);
+    if (m_code == 0) {
+      m_code = sequence::decode(m_current, m_seq_len, m_status, m_endian);
     }
     return m_code;
   }
@@ -226,8 +225,8 @@ public:
    * @return Pointer to current code point
    */
   pointer operator->() const {
-    if(m_code == 0){
-      m_code = sequence<char_type>::decode(m_current, m_seq_len, m_status, m_endian);
+    if (m_code == 0) {
+      m_code = sequence::decode(m_current, m_seq_len, m_status, m_endian);
     }
     return &m_code;
   }
@@ -337,6 +336,13 @@ public:
   bool operator>=(const iter &rhs) const { return this->base() >= rhs.base(); }
 #endif
 
+  // constexpr chunk_proxy8 to_u8() const noexcept{
+  //   // return (*this)->chunk_u8();
+  //   if(m_code == 0) {
+  //     m_code = uc::sequence::decode(m_current, m_seq_len, m_status, m_endian);
+  //   }
+  //   return  std::move(m_code.chunk_u8());
+  // }
   /**
    * @brief Get view of current sequence
    * @return String view of current code point's bytes
@@ -353,51 +359,8 @@ public:
     return std::basic_string<char_type>(seq_view());
   }
 
-  /**
-   * @brief Convert current code point to UTF-8
-   * @return UTF-8 encoded chunk
-   * @note Returns replacement character (U+FFFD) for invalid sequences
-   */
-  chunk_proxy8 to_u8() const {
-    if (m_status != sequence_status::valid) {
-      return chunk_proxy8::make_replacement();
-    }
-    if constexpr (std::is_same_v<char_type, char>) {
-      return chunk_proxy8(seq_view());
-    }
-    return (**this).chunk_u8();
-  }
-
-  /**
-   * @brief Convert current code point to UTF-16
-   * @return UTF-16 encoded chunk
-   */
-  chunk_proxy16 to_u16() const {
-    if (m_status != sequence_status::valid) {
-      return chunk_proxy16::make_replacement();
-    }
-    if constexpr (std::is_same_v<char_type, char16_t>) {
-      return chunk_proxy16(seq_view());
-    }
-    return (**this).chunk_u16();
-  }
-
-  /**
-   * @brief Convert current code point to UTF-32
-   * @return UTF-32 encoded chunk
-   */
-  char32_t to_u32() const {
-    if (m_status != sequence_status::valid) {
-      return uc::codepoint::make_replacement().value();
-    }
-    if(m_code == 0){
-      m_code = sequence<char_type>::decode(m_current, m_seq_len, m_status, m_endian);
-    }
-    return m_code.value();
-  }
-
   auto to_string() const -> std::string {
-    auto chunk_ = this->to_u8();
+    auto chunk_ = (*this)->chunk_u8();
     return std::string(chunk_.buf, chunk_.size());
   }
 
@@ -474,14 +437,14 @@ private:
    * @details Skips invalid sequences according to fallback strategy,
    *          either continuing, skipping, or throwing exceptions
    */
-  void _seek_valid_forward(){
+  void _seek_valid_forward() {
     // reset codepoint
     m_code = 0;
     // move current position
     m_current += (m_status == sequence_status::valid) ? m_seq_len : 1;
     // search next sequence
     while (m_current < m_end) {
-      auto res = sequence<char_type>::check(m_current, m_end, m_endian);
+      auto res = sequence::check(m_current, m_end, m_endian);
 
       m_seq_len = res.length;
       m_status = res.status;
@@ -490,9 +453,9 @@ private:
         return;
       }
 
-      if(m_failed == on_failed::skip){ 
+      if (m_failed == on_failed::skip) {
         m_current += (res.length > 0 ? res.length : 1);
-        if(m_current >= m_end){
+        if (m_current >= m_end) {
           m_status = sequence_status::truncated;
           m_seq_len = 0;
           return;
@@ -500,8 +463,9 @@ private:
         continue;
       }
 
-      if(m_failed == on_failed::error){
-          throw std::runtime_error("gr::utf_iter<> => Invalid UTF sequence encountered");
+      if (m_failed == on_failed::error) {
+        throw std::runtime_error(
+            "gr::utf_iter<> => Invalid UTF sequence encountered");
       }
     }
     if (m_current >= m_end) {
@@ -523,7 +487,7 @@ private:
     m_current--;
 
     while (m_current >= m_beg) {
-      auto res = sequence<char_type>::check(m_current, m_end, m_endian);
+      auto res = sequence::check(m_current, m_end, m_endian);
 
       m_status = res.status;
       m_seq_len = res.length;

@@ -7,13 +7,14 @@ void test_logger(){
   using namespace gr::literals;
 
   gr::log::init_logger("sickee");
+
   auto logger = gr::log::get_default_logger();
 
 
   // 设置日志级别
   logger->set_level(gr::log::level::trace);
   // 添加文件输出
-  logger->add_file_sink("app.log");
+  // logger->add_file_sink("app.log");
 
   // 使用日志 - 完全支持 Unicode
   GR_TRACE("这是一个跟踪消息: {}", 42);
@@ -28,6 +29,7 @@ void test_logger(){
 
   // 创建不同名称的日志记录器
   auto network_logger = gr::log::logger_manager::get_logger("network");
-  network_logger->info("网络连接已建立");
+  network_logger->add_console_sink();
+  network_logger->info("{}","网络连接已建立");
 }
 
