@@ -464,6 +464,143 @@ private:
   cbuf(T *ibeg, T *iend) : _beg(ibeg), _end(iend) {}
 };
 
+template <typename T>
+void build_lps(const T* pattern, size_t pattern_len, utils::cbuf<size_t>& lps) {
+  lps.fillzero();
+  size_t len = 0;
+  size_t i = 1;
+  
+  while (i < pattern_len) {
+    if (pattern[i] == pattern[len]) {
+      len++;
+      lps[i] = len;
+      i++;
+    } else {
+      if (len != 0) {
+        len = lps[len - 1];
+      } else {
+        lps[i] = 0;
+        i++;
+      }
+    }
+  }
+}
+
+template <typename T>
+void build_reverse_lps(const T* pattern, size_t pattern_len, utils::cbuf<size_t>& lps) {
+  lps.fillzero();
+  size_t len = 0;
+  size_t i = 1;
+
+  while (i < pattern_len) {
+    if (pattern[pattern_len - 1 - i] == pattern[pattern_len - 1 - len]) {
+      len++;
+      lps[i] = len;
+      i++;
+    } else {
+      if (len != 0) {
+        len = lps[len - 1];
+      } else {
+        lps[i] = 0;
+        i++;
+      }
+    }
+  }
+}
+
+template <typename T>
+size_t find_mark_kmp(const T *src_beg, size_t src_count, const T *mark_beg,
+                     size_t mark_count, size_t pos, utils::cbuf<size_t>& lps) {
+
+  if (pos >= src_count || mark_count == 0)
+    return gr::utils::nopos;
+
+  // KMP
+  size_t src_idx = pos;
+  size_t mark_idx = 0;
+
+  while (src_idx < src_count) {
+    if (*(src_beg + src_idx) == *(mark_beg + mark_idx)) {
+      src_idx++;
+      mark_idx++;
+
+      if (mark_idx == mark_count) {
+        return src_idx - mark_count;
+      }
+    } else {
+      // 字符不匹配时的处理
+      if (mark_idx != 0) {
+        mark_idx = lps[mark_idx - 1];
+      } else {
+        src_idx++;
+      }
+    }
+  }
+
+  return gr::utils::nopos;
+}
+
+template <typename T>
+size_t find_mark_kmp(const T *src_beg, size_t src_count, const T *mark_beg,
+                     size_t mark_count, size_t pos) {
+
+  if (pos >= src_count || mark_count == 0)
+    return gr::utils::nopos;
+
+  utils::cbuf<size_t> lps = utils::cbuf<size_t>::create(mark_count);
+  build_lps(mark_beg, mark_count, lps);
+
+  return find_mark_kmp(src_beg, src_count, mark_beg, mark_count, pos, lps);
+}
+
+template <typename T>
+size_t rfind_mark_kmp(const T *src_beg, size_t src_count, const T *mark_beg,
+                      size_t mark_count, size_t pos, utils::cbuf<size_t>& rev_lps) {
+
+  if (pos >= src_count || mark_count == 0 || mark_count > src_count)
+    return gr::utils::nopos;
+
+  size_t start_idx = (src_count - 1) - pos;
+  if (start_idx >= src_count)
+    start_idx = src_count - 1;
+
+
+  size_t src_idx = start_idx;
+  size_t mark_idx = 0;
+  // KMP
+  while (src_idx < src_count) {
+    T src_char = src_beg[src_idx - mark_idx];
+    T mark_char = mark_beg[mark_count - 1 - mark_idx];
+
+    if (src_char == mark_char) {
+      mark_idx++;
+      
+      if (mark_idx == mark_count) {
+        return src_idx - mark_count + 1;
+      }
+    } else {
+      if (mark_idx != 0) {
+        mark_idx = rev_lps[mark_idx - 1];
+      } else {
+        if (src_idx == 0) break;
+        src_idx--;
+      }
+    }
+  }
+
+  return gr::utils::nopos;
+}
+
+template <typename T>
+size_t rfind_mark_kmp(const T *src_beg, size_t src_count, const T *mark_beg,
+                      size_t mark_count, size_t pos) {
+
+  if (pos >= src_count || mark_count == 0 || mark_count > src_count)
+    return gr::utils::nopos;
+  utils::cbuf<size_t> rev_lps = utils::cbuf<size_t>::create(mark_count);
+  build_reverse_lps(mark_beg, mark_count, rev_lps);
+  return rfind_mark_kmp(src_beg, src_count, mark_beg, mark_count, pos, rev_lps);
+}
 } // namespace utils
 
 template <typename T, typename... Args> auto make_cptr(Args... args) {

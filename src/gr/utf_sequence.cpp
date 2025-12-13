@@ -1,6 +1,5 @@
 ﻿#include <gr/utf_sequence.hh>
 #include <cstdint>
-#include <gr/utf_iter.hh>
 #include <iostream>
 
 std::ostream &operator<<(std::ostream &os, gr::uc::chunk_proxy8 u8) {

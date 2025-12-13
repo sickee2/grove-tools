@@ -208,7 +208,7 @@ template <typename T> T convert_endian(T value, endian target) {
 
 namespace gr::uc {
 
-template <typename char_type> class iter;
+// template <typename char_type> class iter;
 
 /**
  * @brief Character chunk buffer template
