@@ -71,6 +71,8 @@ namespace gr::utils {
       const;                                                                   \
   template std::vector<utf_view<char>> utf<char>::split_by_re2(const char *)   \
       const;
+#else
+#define INSTANTIATE_UTF_CHAR_SPECIALS()
 #endif
 
 namespace gr::str {
@@ -464,9 +466,7 @@ INSTANTIATE_UTF_FOR_TYPE(char)
 INSTANTIATE_UTF_FOR_TYPE(char16_t)
 INSTANTIATE_UTF_FOR_TYPE(char32_t)
 
-#if GR_HAS_RE2
 INSTANTIATE_UTF_CHAR_SPECIALS()
-#endif
 
 /**
  * @brief Unicode-aware trim leading/trailing whitespace
