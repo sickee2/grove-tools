@@ -19,6 +19,7 @@ TEST_DIR = test
 
 GR_SRC = $(SRC_DIR)/gr/utf_sequence.cpp \
 				 $(SRC_DIR)/gr/utf_string.cpp 
+				 $(SRC_DIR)/gr/external_data.cpp 
 
 CPP_SRC = $(GR_SRC)
 
@@ -62,7 +63,7 @@ MSYSTEM := $(shell echo $$MSYSTEM 2>/dev/null)
 ifeq ($(UNAME_S), Linux)
     LDFLAGS = $(shell pkg-config --libs re2) -liconv -lfmt
 else
-    LDFLAGS = $(shell pkg-config --libs re2) -liconv
+    LDFLAGS = $(shell pkg-config --libs re2) -liconv -lfmt
 endif
 
 # Default target
