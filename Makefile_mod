@@ -1,0 +1,109 @@
+# 编译器配置
+CXX := clang++
+CXXFLAGS := -std=c++23 -stdlib=libc++ -pthread
+OPTFLAGS := -O2
+PICFLAGS := -fPIC
+
+# 依赖生成配置
+DEPDIR := .deps
+DEPFLAGS = -MT $@ -MMD -MP -MF $(DEPDIR)/$*.d
+
+# 目录配置
+PCM_CACHE := pcm.cache
+OBJ_DIR := objs
+LIB_DIR := libs
+INCLUDE_DIR := include
+SRC_DIR := src
+
+# 模块相关配置
+MODULE_FLAGS := -fmodules -fprebuilt-module-path=$(PCM_CACHE)
+STD_MODULE := /usr/share/libc++/v1/std.cppm
+STD_PCM := $(PCM_CACHE)/std.pcm
+GR_TOOLS_MODULE := modules/gr.tools.cppm
+GR_TOOLS_PCM := $(PCM_CACHE)/gr.tools.pcm
+
+# 源文件和目标文件
+GR_SOURCES := $(SRC_DIR)/gr/utf_sequence.cpp $(SRC_DIR)/gr/utf_string.cpp
+GR_OBJECTS := $(OBJ_DIR)/uc.seq.o $(OBJ_DIR)/uc.str.o $(OBJ_DIR)/external_data.o
+LIBRARY := $(LIB_DIR)/libgrove.a
+
+# 主程序
+MAIN_SOURCE := main.cpp
+MAIN_TARGET := tools_test
+
+# pkg-config 配置
+PKG_CONFIG_LIBS := $(shell pkg-config --libs re2)
+EXTERNAL_LIBS := -lfmt
+
+# 默认目标
+all: $(MAIN_TARGET)
+
+# 创建目录
+$(PCM_CACHE) $(OBJ_DIR) $(LIB_DIR) $(DEPDIR):
+	@mkdir -p $@
+
+# 预编译标准库模块
+$(STD_PCM): $(STD_MODULE) | $(PCM_CACHE)
+	@$(CXX) $(CXXFLAGS) --precompile $< \
+		-Wno-reserved-module-identifier \
+		-o $@
+
+# 预编译 gr.tools 模块
+$(GR_TOOLS_PCM): $(GR_TOOLS_MODULE) | $(PCM_CACHE)
+	$(CXX) $(CXXFLAGS) --precompile $< \
+		-o $@ \
+		-I$(INCLUDE_DIR)
+
+# 编译目标文件（带自动依赖生成）- 修复目录问题
+$(OBJ_DIR)/uc.seq.o: $(SRC_DIR)/gr/utf_sequence.cpp | $(OBJ_DIR)
+	@mkdir -p $(dir $(DEPDIR)/$*)
+	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $(PICFLAGS) $(DEPFLAGS) -c $< \
+		-o $@ \
+		-I$(INCLUDE_DIR)
+
+$(OBJ_DIR)/uc.str.o: $(SRC_DIR)/gr/utf_string.cpp | $(OBJ_DIR)
+	@mkdir -p $(dir $(DEPDIR)/$*)
+	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $(PICFLAGS) $(DEPFLAGS) -c $< \
+		-o $@ \
+		-I$(INCLUDE_DIR)
+
+$(OBJ_DIR)/external_data.o: $(SRC_DIR)/gr/external_data.cpp | $(OBJ_DIR)
+	@mkdir -p $(dir $(DEPDIR)/$*)
+	$(CXX) $(CXXFLAGS) $(OPTFLAGS) $(PICFLAGS) $(DEPFLAGS) -c $< \
+		-o $@ \
+		-I$(INCLUDE_DIR)
+
+# 创建静态库
+$(LIBRARY): $(GR_OBJECTS) | $(LIB_DIR)
+	@echo "make static lib to" $(LIBRARY)
+	@ar rcs $@ $^
+
+# 编译主程序（依赖模块预编译）
+$(MAIN_TARGET): $(MAIN_SOURCE) $(LIBRARY) $(STD_PCM) $(GR_TOOLS_PCM)
+	@echo "link..."
+	@$(CXX) $(CXXFLAGS) $(OPTFLAGS) $(MODULE_FLAGS) $< \
+		-o $@ \
+		$(PKG_CONFIG_LIBS) $(EXTERNAL_LIBS) \
+		-L$(LIB_DIR) -lgrove -s
+
+# 清理
+clean:
+	rm -rf $(PCM_CACHE) $(OBJ_DIR) $(LIB_DIR) $(DEPDIR) $(MAIN_TARGET)
+	# rm $(MAIN_TARGET)
+
+# 显示变量值（调试用）
+debug:
+	@echo "CXX: $(CXX)"
+	@echo "CXXFLAGS: $(CXXFLAGS)"
+	@echo "GR_SOURCES: $(GR_SOURCES)"
+	@echo "GR_OBJECTS: $(GR_OBJECTS)"
+	@echo "PKG_CONFIG_LIBS: $(PKG_CONFIG_LIBS)"
+	@echo "DEPDIR: $(DEPDIR)"
+
+run: $(MAIN_TARGET)
+	@./$(MAIN_TARGET)
+# 包含自动生成的依赖文件
+include $(wildcard $(DEPDIR)/*.d)
+
+# 伪目标声明
+.PHONY: all clean debug run

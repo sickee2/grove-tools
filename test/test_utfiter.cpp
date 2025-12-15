@@ -167,7 +167,7 @@ void test_encoding_conversion() {
   // 转换为 UTF-16
   std::vector<chunk_proxy16> utf16_results;
   while (iter) {
-    utf16_results.push_back(iter.to_u16());
+    utf16_results.push_back(iter.value().chunk_u16().view());
     ++iter;
   }
 
@@ -181,7 +181,7 @@ void test_encoding_conversion() {
   iter = make_iterator(text); // 重置迭代器
   std::vector<char32_t> utf32_results;
   while (iter) {
-    utf32_results.push_back(iter.to_u32());
+    utf32_results.push_back(iter.value().value());
     ++iter;
   }
 

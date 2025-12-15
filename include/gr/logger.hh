@@ -193,11 +193,11 @@
 
 #pragma once
 
+#include <cstdio>
 #include <gr/config.hh>
 #include <gr/console.hh>
 #include <gr/format.hh>
 #include <gr/string.hh>
-#include <iostream>
 #include <memory>
 #include <mutex>
 #include <unordered_map>
@@ -246,37 +246,37 @@ GR_CONSTEXPR_OR_INLINE str::u8v level_to_string(level i_level) {
 // ANSI color codes
 namespace colors {
 // Reset all attributes
-static constexpr const char *reset = "\033[0m";
+inline constexpr const char *reset = "\033[0m";
 
 // Foreground colors
-static constexpr const char *black = "\033[30m";
-static constexpr const char *red = "\033[31m";
-static constexpr const char *green = "\033[32m";
-static constexpr const char *yellow = "\033[33m";
-static constexpr const char *blue = "\033[34m";
-static constexpr const char *magenta = "\033[35m";
-static constexpr const char *cyan = "\033[36m";
-static constexpr const char *white = "\033[37m";
+inline constexpr const char *black = "\033[30m";
+inline constexpr const char *red = "\033[31m";
+inline constexpr const char *green = "\033[32m";
+inline constexpr const char *yellow = "\033[33m";
+inline constexpr const char *blue = "\033[34m";
+inline constexpr const char *magenta = "\033[35m";
+inline constexpr const char *white = "\033[37m";
+inline constexpr const char *cyan = "\033[36m";
 
 // Bright colors
-static constexpr const char *bright_black = "\033[90m";
-static constexpr const char *bright_red = "\033[91m";
-static constexpr const char *bright_green = "\033[92m";
-static constexpr const char *bright_yellow = "\033[93m";
-static constexpr const char *bright_blue = "\033[94m";
-static constexpr const char *bright_magenta = "\033[95m";
-static constexpr const char *bright_cyan = "\033[96m";
-static constexpr const char *bright_white = "\033[97m";
+inline constexpr const char *bright_black = "\033[90m";
+inline constexpr const char *bright_red = "\033[91m";
+inline constexpr const char *bright_green = "\033[92m";
+inline constexpr const char *bright_yellow = "\033[93m";
+inline constexpr const char *bright_blue = "\033[94m";
+inline constexpr const char *bright_magenta = "\033[95m";
+inline constexpr const char *bright_cyan = "\033[96m";
+inline constexpr const char *bright_white = "\033[97m";
 
 // Background colors
-static constexpr const char *bg_black = "\033[40m";
-static constexpr const char *bg_red = "\033[41m";
-static constexpr const char *bg_green = "\033[42m";
-static constexpr const char *bg_yellow = "\033[43m";
-static constexpr const char *bg_blue = "\033[44m";
-static constexpr const char *bg_magenta = "\033[45m";
-static constexpr const char *bg_cyan = "\033[46m";
-static constexpr const char *bg_white = "\033[47m";
+inline constexpr const char *bg_black = "\033[40m";
+inline constexpr const char *bg_red = "\033[41m";
+inline constexpr const char *bg_green = "\033[42m";
+inline constexpr const char *bg_yellow = "\033[43m";
+inline constexpr const char *bg_blue = "\033[44m";
+inline constexpr const char *bg_magenta = "\033[45m";
+inline constexpr const char *bg_cyan = "\033[46m";
+inline constexpr const char *bg_white = "\033[47m";
 } // namespace colors
 
 /**
@@ -347,7 +347,7 @@ public:
     }
   }
 
-  void flush() override { std::cout.flush(); }
+  void flush() override { std::fflush(stdout); }
 
   /**
    * @brief Enable or disable color output
@@ -367,7 +367,7 @@ public:
  */
 class file_sink : public sink {
 private:
-  FILE *file_;
+  FILE *file_{nullptr};
   std::mutex mutex_;
 
 public:
@@ -593,19 +593,32 @@ public:
    * @brief Remove console sink
    */
   void remove_console_sink() {
+    // std::lock_guard<std::mutex> lock(mutex_);
+    // if (!has_console_sink_) {
+    //   return;
+    // }
+    //
+    // // Remove all console sinks
+    // sinks_.erase(
+    //     std::remove_if(sinks_.begin(), sinks_.end(),
+    //                    [](const std::shared_ptr<sink> &s) {
+    //                      return std::dynamic_pointer_cast<console_sink>(s) !=
+    //                             nullptr;
+    //                    }),
+    //     sinks_.end());
+    // has_console_sink_ = false;
     std::lock_guard<std::mutex> lock(mutex_);
     if (!has_console_sink_) {
       return;
     }
 
     // Remove all console sinks
-    sinks_.erase(
-        std::remove_if(sinks_.begin(), sinks_.end(),
-                       [](const std::shared_ptr<sink> &s) {
-                         return std::dynamic_pointer_cast<console_sink>(s) !=
+    auto new_end = std::remove_if(sinks_.begin(), sinks_.end(),
+                        [](const std::shared_ptr<sink> &s) {
+                          return std::dynamic_pointer_cast<console_sink>(s) !=
                                 nullptr;
-                       }),
-        sinks_.end());
+                        });
+    sinks_.erase(new_end, sinks_.end());
     has_console_sink_ = false;
   }
 
@@ -652,6 +665,25 @@ public:
     }
   }
 
+  template <typename T>
+  void log(level i_level, const T& value){
+    if (i_level < level_) {
+      return;
+    }
+    auto timestamp = toy::chrono::now();
+    auto level_str = level_to_string(i_level);
+    auto message =
+        toy::format("[{:f}] [{}] [{}] {}", timestamp, level_str, name_,
+                    toy::format(value));
+
+    // Convert str::u8 to str::u8v
+    str::u8v message_view = message.as_view();
+
+    std::lock_guard<std::mutex> lock(mutex_);
+    for (const auto &sink : sinks_) {
+      sink->write(i_level, message_view);
+    }
+  }
   /**
    * @brief Log trace level message
    */
@@ -659,6 +691,13 @@ public:
   void trace(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 0) {
       log(level::trace, format, std::forward<Args>(args)...);
+    }
+  }
+
+  template <typename T>
+  void trace(const T& value) {
+    if constexpr (GR_LOG_LEVEL <= 0) {
+      log(level::trace, value);
     }
   }
 
@@ -672,6 +711,13 @@ public:
     }
   }
 
+  template <typename T>
+  void debug(const T& value) {
+    if constexpr (GR_LOG_LEVEL <= 1) {
+      log(level::debug, value);
+    }
+  }
+
   /**
    * @brief Log info level message
    */
@@ -679,6 +725,13 @@ public:
   void info(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 2) {
       log(level::info, format, std::forward<Args>(args)...);
+    }
+  }
+
+  template <typename T>
+  void info(const T& value) {
+    if constexpr (GR_LOG_LEVEL <= 2) {
+      log(level::info, value);
     }
   }
 
@@ -692,6 +745,13 @@ public:
     }
   }
 
+  template <typename T>
+  void warn(const T& value) {
+    if constexpr (GR_LOG_LEVEL <= 3) {
+      log(level::warn, value);
+    }
+  }
+
   /**
    * @brief Log error level message
    */
@@ -702,6 +762,13 @@ public:
     }
   }
 
+  template <typename T>
+  void error(const T& value) {
+    if constexpr (GR_LOG_LEVEL <= 4) {
+      log(level::error, value);
+    }
+  }
+
   /**
    * @brief Log fatal level message
    */
@@ -709,6 +776,13 @@ public:
   void fatal(toy::fmt_string<Args...> format, Args &&...args) {
     if constexpr (GR_LOG_LEVEL <= 5) {
       log(level::fatal, format, std::forward<Args>(args)...);
+    }
+  }
+
+  template <typename T>
+  void fatal(const T& value) {
+    if constexpr (GR_LOG_LEVEL <= 5) {
+      log(level::fatal, value);
     }
   }
 
@@ -728,25 +802,9 @@ public:
  */
 class logger_manager {
 private:
-  // Hash support for str::u8
-  struct u8_hash {
-    std::size_t operator()(const str::u8 &s) const {
-      return std::hash<std::string_view>{}(s.as_std_view());
-    }
-  };
-
-  // Equality comparison for str::u8
-  struct u8_equal {
-    bool operator()(const str::u8 &lhs, const str::u8 &rhs) const {
-      return lhs.as_std_view() == rhs.as_std_view();
-    }
-  };
-
-  static inline std::unordered_map<str::u8, std::shared_ptr<Logger>, u8_hash,
-                                   u8_equal> loggers_;
-  static inline std::mutex mutex_;
-  static inline std::shared_ptr<Logger> default_logger_ =
-      std::make_shared<Logger>();
+  static std::unordered_map<std::string, std::shared_ptr<Logger>> loggers_;
+  static std::mutex mutex_;
+  static std::shared_ptr<Logger> default_logger_; // = std::make_shared<Logger>();
 
 public:
   /**

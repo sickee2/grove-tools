@@ -163,16 +163,16 @@ struct info {
 };
 
 // UTF-8 BOM
-static constexpr char8_t utf8[] = u8"\uFEFF";
-static constexpr char utf8_bytes[] = "\xEF\xBB\xBF";
+inline constexpr char8_t utf8[] = u8"\uFEFF";
+inline constexpr char utf8_bytes[] = "\xEF\xBB\xBF";
 
 // UTF-16 BOM
-static constexpr char16_t utf16_le = 0xFEFF; // Little Endian
-static constexpr char16_t utf16_be = 0xFFFE; // Big Endian
+inline constexpr char16_t utf16_le = 0xFEFF; // Little Endian
+inline constexpr char16_t utf16_be = 0xFFFE; // Big Endian
 
 // UTF-32 BOM
-static constexpr char32_t utf32_le = 0x0000FEFF; // Little Endian
-static constexpr char32_t utf32_be = 0xFFFE0000; // Big Endian
+inline constexpr char32_t utf32_le = 0x0000FEFF; // Little Endian
+inline constexpr char32_t utf32_be = 0xFFFE0000; // Big Endian
 
 template <typename char_type> info detect(const char_type *, size_t);
 template <> info detect(const char *s, size_t n);
@@ -1272,7 +1272,15 @@ public:
    */
   template<typename T = char_type>
   [[nodiscard]] auto extract(const char_type *pattern) const
-  -> std::enable_if_t<std::is_same_v<T, char>, utf<char_type>>;
+  -> std::enable_if_t<std::is_same_v<T, char>, utf<char_type>>
+  {
+    re2::StringPiece result;
+    if (re2::RE2::PartialMatch(this->as_std_view(), pattern, &result)) {
+      return utf<char_type>(result.data(), result.size());
+    }
+    return utf<char_type>();
+  }
+
 
   /**
    * @brief Extract all matches of RE2 pattern
@@ -1283,7 +1291,23 @@ public:
   template<typename T = char_type>
   [[nodiscard]]
   auto extract_all(const char_type *pattern) const
-    -> std::enable_if_t< std::is_same_v<T, char> , std::vector<utf_view<char_type>>>;
+    -> std::enable_if_t< std::is_same_v<T, char> , std::vector<utf_view<char_type>>>
+  {
+    std::vector<utf_view<char_type>> results;
+    re2::StringPiece input(this->data(), this->size());
+    re2::RE2 re(pattern);
+    re2::StringPiece match;
+
+    while (re.Match(input, 0, input.size(), re2::RE2::UNANCHORED, &match, 1)) {
+      if (match.empty())
+        break;
+      results.emplace_back(match.data(), match.size());
+      input = re2::StringPiece(match.data() + match.size(),
+                              input.size() - (match.data() - input.data()) -
+                                  match.size());
+    }
+    return results;
+  }
 
   /**
    * @brief Split string by RE2 pattern
@@ -1294,8 +1318,32 @@ public:
   template<typename T = char_type>
   [[nodiscard]]
    auto split_by_re2(const char_type *pattern) const
-    -> std::enable_if_t<std::is_same_v<T, char>, std::vector<utf_view<char_type>>>;
+    -> std::enable_if_t<std::is_same_v<T, char>, std::vector<utf_view<char_type>>>
+  {
+    std::vector<utf_view<char_type>> results;
+    re2::StringPiece input(this->data(), this->size());
+    re2::RE2 re(pattern);
+    re2::StringPiece match;
+    size_t last_pos = 0;
 
+    while (re.Match(input, last_pos, input.size(), re2::RE2::UNANCHORED, &match,
+                    1)) {
+      if (match.data() == nullptr)
+        break;
+
+      size_t match_pos = match.data() - input.data();
+      if (match_pos > last_pos) {
+        results.emplace_back(input.data() + last_pos, match_pos - last_pos);
+      }
+      last_pos = match_pos + match.size();
+    }
+
+    if (last_pos < input.size()) {
+      results.emplace_back(input.data() + last_pos, input.size() - last_pos);
+    }
+
+    return results;
+  }
 #endif
 
   /**
@@ -2156,6 +2204,7 @@ struct std::formatter<gr::uc::codepoint> : std::formatter<std::string_view> {
 
 #endif
 
+namespace gr{
 /**
  * @brief operator of ostream for gr::uc::u8
  */
@@ -2170,4 +2219,5 @@ inline std::ostream &operator<<(std::ostream &os, gr::str::u8 u8) {
 inline std::ostream &operator<<(std::ostream &os, gr::str::u8v u8) {
   os << u8.as_string_view();
   return os;
+}
 }

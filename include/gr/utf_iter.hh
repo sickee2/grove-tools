@@ -104,12 +104,12 @@
 
 #include <algorithm>
 #include <assert.h>
-#include <compare>
 #include <cstdint>
 #include <gr/utf_sequence.hh>
 #include <gr/utils.hh>
 #include <iostream>
 #if GR_HAS_CPP20
+#include <compare>
 #include <ranges>
 #endif
 #include <string_view>
@@ -611,6 +611,7 @@ make_iterator(const CharT *s, size_t len, size_t pos = 0,
 
 } // namespace gr::uc
 
+namespace gr{
 /**
  * @brief Output stream operator for UTF-8 chunks
  * @param os Output stream
@@ -619,3 +620,4 @@ make_iterator(const CharT *s, size_t len, size_t pos = 0,
  */
 std::ostream &operator<<(std::ostream &os, gr::uc::chunk_proxy8 u8);
 std::ostream &operator<<(std::ostream &os, gr::uc::codepoint code);
+}

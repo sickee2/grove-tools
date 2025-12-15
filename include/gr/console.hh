@@ -155,7 +155,7 @@ namespace gr {
 namespace console {
 namespace detail {
 
-GR_CONSTEXPR_OR_INLINE static auto lock_stream() {
+GR_CONSTEXPR_OR_INLINE auto lock_stream() {
   static std::mutex stream_output_lock;
   return std::unique_lock<std::mutex>(stream_output_lock);
 }

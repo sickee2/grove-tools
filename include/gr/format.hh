@@ -990,18 +990,20 @@ public:
 /**
  * @brief Format std::chrono::time_point objects
  */
-template <typename Clock, typename Duration>
+template <typename Clock>
 void format_chrono_time_point(
     format_output &out,
-    const std::chrono::time_point<Clock, Duration> &time_point,
+    const std::chrono::time_point<Clock> &time_point,
     const format_spec &spec) {
+  namespace chr = std::chrono;
   // Calculate all time components at once
-  auto time_t = Clock::to_time_t(time_point);
   auto duration = time_point.time_since_epoch();
-  auto seconds = std::chrono::duration_cast<std::chrono::seconds>(duration);
+  // auto milliseconds = chr::duration_cast<chr::milliseconds>(duration);
+  auto seconds = chr::duration_cast<chr::seconds>(duration);
   auto milliseconds =
-      std::chrono::duration_cast<std::chrono::milliseconds>(duration - seconds);
+      chr::duration_cast<chr::milliseconds>(duration - seconds);
 
+  auto time_t = Clock::to_time_t(time_point);
   std::tm tm;
 #ifdef _WIN32
   localtime_s(&tm, &time_t);
@@ -1010,6 +1012,8 @@ void format_chrono_time_point(
 #endif
 
   int ms = static_cast<int>(milliseconds.count() % 1000);
+  // auto milliseconds = duration_cast<std::chrono::milliseconds>(duration) % 1000;
+  // int ms = static_cast<int>(milliseconds);
 
   auto ftime = __ftime::time_writer(tm);
   switch (spec.type) {
@@ -1321,10 +1325,10 @@ struct formatter<std::chrono::duration<Rep, Period>> {
 };
 
 // chrono time point specialization
-template <typename Clock, typename Duration>
-struct formatter<std::chrono::time_point<Clock, Duration>> {
+template <typename Clock>
+struct formatter<std::chrono::time_point<Clock>> {
   void operator()(format_output &out,
-                  const std::chrono::time_point<Clock, Duration> &value,
+                  const std::chrono::time_point<Clock> &value,
                   const format_spec &spec) const {
     format_chrono_time_point(out, value, spec);
   }
@@ -1900,6 +1904,21 @@ void format_to(format_output &out, fmt_string<Args...> fmt, Args &&...args) {
       }
     }
   }
+}
+
+/**
+ * @brief non format version
+ *        fast to convert value to string auto
+ * @param v any supported type value to convert
+ */
+template <typename T>
+str::u8 format(const T& v){
+  static format_spec spec;
+  str::u8 res;
+  res.reserve(32);
+  format_output out(res);
+  gr::toy::detail::format_arg(out, v, spec);
+  return res;
 }
 
 template <typename... Args>

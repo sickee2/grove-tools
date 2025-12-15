@@ -23,7 +23,7 @@ namespace utils {
 template <typename Tp>
 using pointer_to_type = std::remove_const_t<std::remove_pointer_t<Tp>>;
 
-GR_CONSTEXPR_OR_INLINE const static size_t nopos = size_t(-1);
+inline constexpr size_t nopos = size_t(-1);
 
 /**
  * @brief Custom smart pointer with explicit memory management

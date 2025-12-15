@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <iostream>
 
+namespace gr{
 std::ostream &operator<<(std::ostream &os, gr::uc::chunk_proxy8 u8) {
   os << u8.buf;
   return os;
@@ -11,7 +12,7 @@ std::ostream &operator<<(std::ostream &os, gr::uc::codepoint code) {
   os << code.chunk_u8();
   return os;
 }
-
+}
 namespace gr::uc {
 
 static const char *status_infos[] = {"Valid", "InvalidContinuation",

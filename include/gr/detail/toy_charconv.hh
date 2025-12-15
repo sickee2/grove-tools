@@ -73,25 +73,26 @@ struct sstov_result {
 
 namespace detail {
 
-static constexpr uint64_t POW10_TABLE[] = {1,
-                                           10,
-                                           100,
-                                           1000,
-                                           10000,
-                                           100000,
-                                           1000000,
-                                           10000000,
-                                           100000000,
-                                           1000000000,
-                                           10000000000,
-                                           100000000000,
-                                           1000000000000,
-                                           10000000000000,
-                                           100000000000000,
-                                           1000000000000000,
-                                           10000000000000000,
-                                           100000000000000000,
-                                           1000000000000000000};
+extern const uint64_t POW10_TABLE[19];
+// inline constexpr uint64_t POW10_TABLE[] = {1,
+//                                            10,
+//                                            100,
+//                                            1000,
+//                                            10000,
+//                                            100000,
+//                                            1000000,
+//                                            10000000,
+//                                            100000000,
+//                                            1000000000,
+//                                            10000000000,
+//                                            100000000000,
+//                                            1000000000000,
+//                                            10000000000000,
+//                                            100000000000000,
+//                                            1000000000000000,
+//                                            10000000000000000,
+//                                            100000000000000000,
+//                                            1000000000000000000};
 
 template <typename T> struct make_unsigned;
 
@@ -272,7 +273,7 @@ template <> struct numeric_limits<__int128_t> {
 };
 
 #define CHAR_TO_DIGIT_METHOD 2
-constexpr int char_to_digit(char c) {
+inline int char_to_digit(char c) {
 #if CHAR_TO_DIGIT_METHOD == 0
   /// no memory used
   if (c >= 0 && c <= '9') {
@@ -310,7 +311,7 @@ constexpr int char_to_digit(char c) {
   return table[ch];
 #else
   /// use table
-  constexpr static auto make_c2d_table = [] -> std::array<int8_t, 256> {
+  constexpr static auto make_c2d_table = []() -> std::array<int8_t, 256> {
     std::array<int8_t, 256> table{};
     int8_t i = 0;
     std::fill_n(table.data(), 256, -1);
@@ -327,13 +328,13 @@ constexpr int char_to_digit(char c) {
     }
     return table;
   };
-  static constexpr auto c2d_table = make_c2d_table();
+  static auto c2d_table = make_c2d_table();
   return c2d_table[c];
 #endif
 }
 
 template <bool IsOctal, typename UnsignedType>
-inline sstov_result stoi_pow2_base_u(const char *first, const char *last,
+sstov_result stoi_pow2_base_u(const char *first, const char *last,
                                      UnsignedType &result, unsigned base) {
   const unsigned shift = IsOctal ? 3 : (base == 2 ? 1 : 4);
   constexpr UnsignedType max_value = UnsignedType(-1);
@@ -369,7 +370,7 @@ inline sstov_result stoi_pow2_base_u(const char *first, const char *last,
 }
 
 template <typename UnsignedType>
-inline sstov_result stoi_base10_u(const char *first, const char *last,
+sstov_result stoi_base10_u(const char *first, const char *last,
                                   UnsignedType &result) {
 
   result = 0;
@@ -410,7 +411,7 @@ inline sstov_result stoi_base10_u(const char *first, const char *last,
 }
 
 template <typename UnsignedType>
-inline sstov_result stoi_alnum_u(const char *first, const char *last,
+sstov_result stoi_alnum_u(const char *first, const char *last,
                                  UnsignedType &result, unsigned base) {
   result = 0;
   std::errc ec{};
@@ -448,13 +449,14 @@ inline sstov_result stoi_alnum_u(const char *first, const char *last,
   }
   return {first, ec};
 }
+
 template <typename part_store_u> struct fp_parts_store {
   part_store_u int_part;
   part_store_u frac_part;
 };
 
 template <typename fp_type>
-inline auto get_fp_parts(fp_type value, unsigned precision)
+auto get_fp_parts(fp_type value, unsigned precision)
     -> fp_parts_store<detail::fp_store_t<fp_type>> {
   using traits = fp_traits<fp_type>;
   using uint_type = typename traits::uint_type;
@@ -543,7 +545,7 @@ inline auto get_fp_parts(fp_type value, unsigned precision)
 }
 
 template <typename fp_type>
-inline auto _split_float_u(fp_type value, int precision)
+constexpr auto _split_float_u(fp_type value, int precision)
     -> fp_parts_store<detail::fp_store_t<fp_type>> {
   return get_fp_parts<fp_type>(value, precision);
 }
@@ -766,7 +768,7 @@ public:
 
   size_t size() const { return ptr_ - buffer_; }
 
-  static constexpr uint64_t get_pow10(unsigned x) { return POW10_TABLE[x]; }
+  inline static constexpr uint64_t get_pow10(unsigned x) { return POW10_TABLE[x]; }
 
 private:
   char *buffer_;
@@ -1206,10 +1208,10 @@ inline std::errc check_integer_overflow(int str_sign, unsigned_type pre_result,
  * @note when errcode genrated, value should set zero
  */
 template <typename integer_type>
-inline sstov_result sstoi(const char *first, const char *last,
+sstov_result sstoi(const char *first, const char *last,
                           integer_type &value, int base = 10) noexcept {
-  static_assert(detail::supports_integer_v<integer_type>,
-                "Only integral types supported");
+  // static_assert(detail::supports_integer_v<integer_type>,
+  //               "Only integral types supported");
 
   if (last <= first || base < 2 || base > 36) {
     value = 0;
@@ -1409,3 +1411,4 @@ itoss(char *out_buffer, size_t buffer_size, T value, unsigned base = 10,
 }
 
 } // namespace gr::toy
+

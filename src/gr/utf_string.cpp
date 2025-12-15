@@ -7,6 +7,9 @@
 #include <gr/utf_sequence.hh>
 #include "gr/utils.hh"
 #include <gr/string.hh>
+#if GR_HAS_RE2
+#include <re2/re2.h>
+#endif
 #ifndef DISABLE_SUPPORT_ICONV
 #include <iconv.h>
 #endif
@@ -63,17 +66,6 @@ namespace gr::utils {
   UTF_TYPE(T)::reverse() const;                                                \
   UTF_TYPE(T)::reverse_bytes() const;                                          \
   UTF_TYPE(T)::replace_all(utf_view<T>, utf_view<T>) const;
-
-#if GR_HAS_RE2
-#define INSTANTIATE_UTF_CHAR_SPECIALS()                                        \
-  template utf<char> utf<char>::extract(const char *) const;                   \
-  template std::vector<utf_view<char>> utf<char>::extract_all(const char *)    \
-      const;                                                                   \
-  template std::vector<utf_view<char>> utf<char>::split_by_re2(const char *)   \
-      const;
-#else
-#define INSTANTIATE_UTF_CHAR_SPECIALS()
-#endif
 
 namespace gr::str {
 
@@ -465,8 +457,6 @@ INSTANTIATE_UTF_VIEW_FOR_TYPE(char32_t)
 INSTANTIATE_UTF_FOR_TYPE(char)
 INSTANTIATE_UTF_FOR_TYPE(char16_t)
 INSTANTIATE_UTF_FOR_TYPE(char32_t)
-
-INSTANTIATE_UTF_CHAR_SPECIALS()
 
 /**
  * @brief Unicode-aware trim leading/trailing whitespace
@@ -1177,73 +1167,6 @@ utf<char_type, Alloc> utf<char_type, Alloc>::reverse_bytes() const {
   }
   return result;
 }
-
-#if GR_HAS_RE2
-
-template <typename char_type, typename Alloc>
-template<typename T>
-auto utf<char_type, Alloc>::split_by_re2(const char_type *pattern) const
-    -> std::enable_if_t<std::is_same_v<T, char>, std::vector<utf_view<char_type>>>
-{
-  std::vector<utf_view<char_type>> results;
-  re2::StringPiece input(this->data(), this->size());
-  re2::RE2 re(pattern);
-  re2::StringPiece match;
-  size_t last_pos = 0;
-
-  while (re.Match(input, last_pos, input.size(), re2::RE2::UNANCHORED, &match,
-                  1)) {
-    if (match.data() == nullptr)
-      break;
-
-    size_t match_pos = match.data() - input.data();
-    if (match_pos > last_pos) {
-      results.emplace_back(input.data() + last_pos, match_pos - last_pos);
-    }
-    last_pos = match_pos + match.size();
-  }
-
-  if (last_pos < input.size()) {
-    results.emplace_back(input.data() + last_pos, input.size() - last_pos);
-  }
-
-  return results;
-}
-
-template <typename char_type, typename Alloc>
-template <typename T>
-auto utf<char_type, Alloc>::extract_all(const char_type *pattern) const
-    -> std::enable_if_t< std::is_same_v<T, char> , std::vector<utf_view<char_type>>>
-{
-  std::vector<utf_view<char_type>> results;
-  re2::StringPiece input(this->data(), this->size());
-  re2::RE2 re(pattern);
-  re2::StringPiece match;
-
-  while (re.Match(input, 0, input.size(), re2::RE2::UNANCHORED, &match, 1)) {
-    if (match.empty())
-      break;
-    results.emplace_back(match.data(), match.size());
-    input = re2::StringPiece(match.data() + match.size(),
-                             input.size() - (match.data() - input.data()) -
-                                 match.size());
-  }
-  return results;
-}
-
-template <typename char_type, typename Alloc>
-template<typename T>
-auto utf<char_type, Alloc>::extract(const char_type *pattern) const
-  -> std::enable_if_t<std::is_same_v<T, char>, utf<char_type>>
-{
-  re2::StringPiece result;
-  if (re2::RE2::PartialMatch(this->as_std_view(), pattern, &result)) {
-    return utf<char_type>(result.data(), result.size());
-  }
-  return utf<char_type>();
-}
-
-#endif
 
 template <typename char_type>
 auto utf_view<char_type>::word_boundaries() const -> std::vector<uint32_t> {

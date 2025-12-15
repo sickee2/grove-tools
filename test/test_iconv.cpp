@@ -115,7 +115,7 @@ to_utf8_original(u16v utf16,
 
   for (auto it = uc::make_iterator(utf16, 0, uc::on_failed::skip, endian_); it;
        ++it) {
-    result.append(it.to_u8().view());
+    result.append(it.value().chunk_u8().view());
   }
   return result;
 }
