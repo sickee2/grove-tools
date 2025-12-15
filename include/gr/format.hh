@@ -1915,7 +1915,7 @@ template <typename T>
 str::u8 format(const T& v){
   static format_spec spec;
   str::u8 res;
-  res.reserve(32);
+  // res.reserve(32);
   format_output out(res);
   gr::toy::detail::format_arg(out, v, spec);
   return res;

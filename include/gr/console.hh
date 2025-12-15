@@ -208,6 +208,12 @@ GR_CONSTEXPR_OR_INLINE void write(const std::string &s){
   detail::write_to_stream(detail::stream::type::out, s.data(), s.size());
 }
 
+template <typename T>
+GR_CONSTEXPR_OR_INLINE void write(const T &v){
+  auto s = gr::toy::format(v);
+  detail::write_to_stream(detail::stream::type::out, s.data(), s.size());
+}
+
 template<typename...Args>
 void write(gr::toy::fmt_string<Args...> fmt, Args&&...args){
   auto formatted = gr::toy::format(fmt, std::forward<Args>(args)...);
@@ -224,6 +230,12 @@ GR_CONSTEXPR_OR_INLINE void writeln(gr::str::u8v s){
 }
 
 GR_CONSTEXPR_OR_INLINE void writeln(const std::string &s){
+  detail::write_line_to_stream(detail::stream::type::out, s.data(), s.size());
+}
+
+template <typename T>
+GR_CONSTEXPR_OR_INLINE void writeln(const T &v){
+  auto s = gr::toy::format(v);
   detail::write_line_to_stream(detail::stream::type::out, s.data(), s.size());
 }
 
@@ -251,6 +263,12 @@ GR_CONSTEXPR_OR_INLINE void error(const std::string &s){
   detail::write_to_stream(detail::stream::type::err, s.data(), s.size());
 }
 
+template <typename T>
+GR_CONSTEXPR_OR_INLINE void error(const T &v){
+  auto s = gr::toy::format(v);
+  detail::write_to_stream(detail::stream::type::err, s.data(), s.size());
+}
+
 template<typename...Args>
 void error(gr::toy::fmt_string<Args...> fmt, Args&&...args){
   auto formatted = gr::toy::format(fmt, std::forward<Args>(args)...);
@@ -275,6 +293,13 @@ GR_CONSTEXPR_OR_INLINE void errorln(gr::toy::fmt_string<Args...> fmt, Args&&...a
   auto formatted = gr::toy::format(fmt, std::forward<Args>(args)...);
   detail::write_line_to_stream(detail::stream::type::err, formatted.data(), formatted.size());
 }
+
+template <typename T>
+GR_CONSTEXPR_OR_INLINE void errorln(const T &v){
+  auto s = gr::toy::format(v);
+  detail::write_line_to_stream(detail::stream::type::err, s.data(), s.size());
+}
+
 GR_CONSTEXPR_OR_INLINE void errorln(){
   auto locker = detail::lock_stream();
   std::fputc('\n', stderr);
