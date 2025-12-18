@@ -5,7 +5,7 @@
  */
 
 #include <gr/utf_sequence.hh>
-#include <gr/utils.hh>
+#include "gr/utils.hh"
 #include <gr/string.hh>
 #if GR_HAS_RE2
 #include <re2/re2.h>
@@ -1198,15 +1198,16 @@ auto utf_view<char_type>::word_boundaries() const -> std::vector<uint32_t> {
 
   return boundaries;
 }
+
 namespace toy {
 union string_data_gcc_std {
   struct string_stack {
-    const char *ptr;
+    char *ptr;
     size_t size;
     char ch[16];
   } stack;
   struct string_heep {
-    const char *ptr;
+    char *ptr;
     size_t size;
     size_t cap;
   }heap;
@@ -1214,7 +1215,7 @@ union string_data_gcc_std {
 
 struct string_data_clang_std {
   union {
-    unsigned char holder:8;
+    // unsigned char holder:8;
     struct {
       size_t cap;
       size_t size;
@@ -1232,10 +1233,12 @@ void hack_string_data(void *string_ref_p, unsigned char_width,
   if constexpr (sizeof(std::string) == 24) {
     using hack_p = string_data_clang_std *;
     auto sp = hack_p(string_ref_p);
+
     bool in_heap = sp->stack.size & 1;
     if (in_heap) {
       std::free(sp->heap.ch);
     }
+
     auto bytes = cbuf.bytes() - 1;
     auto n_elem = bytes / char_width;
 
@@ -1247,16 +1250,17 @@ void hack_string_data(void *string_ref_p, unsigned char_width,
         sp->stack.ch[i] = cbuf[i];
       }
       sp->stack.ch[bytes] = 0;
-      sp->stack.size = ((n_elem) << 1);
+      sp->stack.size = ((n_elem) << 1); // LSP=0
 
     } else {
       size_t cap = cbuf.capacity();
       cap /= char_width;
-
+      cap--;
+      if(!(cap & 1)) cap--;
       auto [data, bytes_] = cbuf.detach();
 
-      sp->heap.cap = cap + 1;
-      sp->holder |= 1;
+      sp->heap.cap = (cap + 1) | 1;
+      // sp->holder |= 1;
       sp->heap.size = n_elem;
       sp->heap.ch = data;
     }
@@ -1267,7 +1271,7 @@ void hack_string_data(void *string_ref_p, unsigned char_width,
     bool in_heap = (sp->stack.ptr != sp->stack.ch);
 
     if (in_heap) {
-      delete[] sp->heap.ptr;
+      std::free(sp->heap.ptr);
     }
 
     size_t cap = cbuf.capacity_bytes() / char_width;
@@ -1299,10 +1303,10 @@ void hack_string_size(void *string_ref_p, size_t n) {
   if constexpr (sizeof(std::string) == 24) {
     using hack_p = string_data_clang_std *;
     auto sp = hack_p(string_ref_p);
-    if (sp->holder & 1) {
+    if (sp->stack.size & 1) {
       sp->heap.size = n;
     } else {
-      sp->stack.size = n;
+      sp->stack.size = ((unsigned char)(n) << 1);
     }
   } else {
     using hack_p = string_data_gcc_std *;
