@@ -207,8 +207,8 @@ private:
  * Provides a unified interface for appending formatted content
  */
 
-// using format_output_context = str::u8;
-using format_output_context = string_buffer<char>;
+using format_output_context = str::u8;
+// using format_output_context = string_buffer<char>;
 
 class format_output {
   format_output_context &out_ctxt;
